@@ -1,5 +1,5 @@
 from sqlalchemy import Column, Integer, String, Date
-from .database import Base
+from database import Base
 
 class User(Base):
     __tablename__ = "users"
@@ -10,3 +10,9 @@ class User(Base):
     phone = Column(String(20), nullable=False, unique=True, index=True)
     aadhar = Column(String(20), nullable=False, unique=True, index=True)
     dob = Column(Date, nullable=False)
+
+def create_tables(engine):
+    """
+    Create all tables in the database
+    """
+    Base.metadata.create_all(bind=engine)
