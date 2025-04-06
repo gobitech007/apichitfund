@@ -21,13 +21,17 @@ class UserUpdate(BaseModel):
     password: Optional[str] = None
 
 class User(UserBase):
-    id: int
+    user_id: int
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
-class UserCreateResponse(User):
+class UserCreateResponse(UserBase):
+    user_id: int
     generated_password: Optional[str] = None
+
+    class Config:
+        from_attributes = True
 
 class Token(BaseModel):
     access_token: str
@@ -37,5 +41,6 @@ class TokenData(BaseModel):
     email: Optional[str] = None
 
 class UserLogin(BaseModel):
-    email: EmailStr
-    password: str
+    email: Optional[EmailStr] = None
+    phone: Optional[str] = None
+    aadhar: Optional[str] = None

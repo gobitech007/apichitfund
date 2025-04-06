@@ -5,11 +5,12 @@ from datetime import timedelta
 
 import crud
 import schemas
+import auth
 from database import get_db
 from auth import (
-    authenticate_user, 
-    create_access_token, 
-    get_current_user, 
+    authenticate_user,
+    create_access_token,
+    get_current_user,
     ACCESS_TOKEN_EXPIRE_MINUTES
 )
 
@@ -22,6 +23,14 @@ def read_root():
 
 # Authentication router
 auth_router = APIRouter(prefix="/auth", tags=["Authentication"])
+
+@auth_router.options("/cors-check")
+async def cors_check():
+    """
+    Simple endpoint to check CORS configuration.
+    This endpoint is used by the frontend to verify CORS is working correctly.
+    """
+    return {"status": "ok", "cors": "enabled"}
 
 @auth_router.post("/token", response_model=schemas.Token)
 async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
@@ -40,13 +49,28 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
 
 @auth_router.post("/login", response_model=schemas.Token)
 async def login(login_data: schemas.UserLogin, db: Session = Depends(get_db)):
-    user = authenticate_user(db, login_data.email, login_data.password)
+    # Check if at least one identifier is provided
+    if not login_data.email and not login_data.phone and not login_data.aadhar:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="At least one of email, phone, or aadhar must be provided",
+        )
+
+    # Authenticate user by identifier without password
+    user = auth.authenticate_user_by_identifier(
+        db,
+        email=login_data.email,
+        phone=login_data.phone,
+        aadhar=login_data.aadhar
+    )
+
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect email or password",
+            detail="User not found with provided credentials",
             headers={"WWW-Authenticate": "Bearer"},
         )
+
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
         data={"sub": user.email}, expires_delta=access_token_expires
@@ -65,7 +89,7 @@ def read_users(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     users = crud.get_users(db, skip=skip, limit=limit)
     return users
 
-@users_router.post("/", response_model=schemas.User)
+@users_router.post("/", response_model=schemas.UserCreateResponse)
 def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
     db_user = crud.get_user_by_email(db, email=user.email)
     if db_user:

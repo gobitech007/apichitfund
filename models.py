@@ -10,6 +10,7 @@ class User(Base):
     phone = Column(String(20), nullable=False, unique=True, index=True)
     aadhar = Column(String(20), nullable=False, unique=True, index=True)
     dob = Column(Date, nullable=False)
+    password = Column(String(100), nullable=False)
 
 def create_tables(engine):
     """

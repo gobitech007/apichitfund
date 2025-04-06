@@ -20,10 +20,11 @@ app = FastAPI(
 # Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # In production, replace with specific origins
+    allow_origins=["http://localhost:3000"],  # React app origin
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+    allow_headers=["Content-Type", "Authorization", "Accept"],
+    expose_headers=["Content-Type"]
 )
 
 # Custom OpenAPI schema
@@ -66,6 +67,6 @@ if __name__ == "__main__":
     print("  DELETE /api/users/{user_id} - Delete user")
     print("Authentication endpoints:")
     print("  POST   /api/auth/token  - Get access token (OAuth2 form)")
-    print("  POST   /api/auth/login  - Login with email/password")
+    print("  POST   /api/auth/login  - Login with email/phone number")
     print("  GET    /api/auth/me     - Get current user info")
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True, log_level="info")
