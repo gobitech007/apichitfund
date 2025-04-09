@@ -4,8 +4,9 @@ from fastapi.openapi.utils import get_openapi
 
 from database import engine
 from models import create_tables
-from routes import router, auth_router, users_router, payments_router
-from dynamic_tables_routes import dynamic_tables_router
+from routes import router, auth_router, users_router
+from payments.payments_routes import payments_router
+# from dynamic_tables_routes import dynamic_tables_router
 from middleware import audit_middleware
 from migrations import run_migrations
 

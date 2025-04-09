@@ -1,16 +1,19 @@
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
+from typing import List
 
 import models
 import schemas
 import auth
 from payments import payment_schemas
-from audit import add_audit_fields
+# from audit import add_audit_fields
 
 def get_user(db: Session, user_id: int):
+    """ return db.query(models.User).filter(models.User.user_id == user_id).first() """    
     return db.query(models.User).filter(models.User.user_id == user_id).first()
 
 def get_user_by_email(db: Session, email: str):
+    """ return db.query(models.User).filter(models.User.email == email).first() """
     return db.query(models.User).filter(models.User.email == email).first()
 
 def get_user_by_aadhar(db: Session, aadhar: str):
@@ -242,7 +245,9 @@ def create_chit_user(db: Session, chit_user: "payment_schemas.ChitUserCreate", c
         db.add(db_chit_user)
         db.commit()
         db.refresh(db_chit_user)
-        
+        # ... existing fields ...
+        # pay_details = relationship("pay_details", back_populates="chit")
+        create_pay_details(db, db_chit_user.chit_id)
         return db_chit_user
     except Exception as e:
         # If there's an error, try again with just the basic fields
@@ -265,3 +270,41 @@ def create_chit_user(db: Session, chit_user: "payment_schemas.ChitUserCreate", c
         else:
             # If it's some other error, re-raise it
             raise
+
+def create_pay_details(db: Session, chit_id: int = None):
+    # Create new pay_details
+        # Try to create with all fields including audit fields
+        pay_details = []
+        for week in range(1, 55):
+            db_pay_details = models.Pay_details(
+                chit_id=chit_id,
+                week=week,
+                is_paid='N'
+            )
+            db.add(db_pay_details)  # Add each instance individually
+            pay_details.append(db_pay_details)
+        
+        # Add audit fields
+        # add_audit_fields(db_pay_details, current_user_id, is_new=True)
+        
+        db.commit()
+        # Refresh each instance individually
+        for db_pay_details in pay_details:
+            db.refresh(db_pay_details)
+    
+        return pay_details
+    
+def get_pay_details(db: Session, chit_id: int) -> List[models.Pay_details]:
+    return db.query(models.Pay_details).filter(models.Pay_details.chit_id == chit_id).all()
+
+def update_pay_detail(db: Session, chit_id: int, week: int, is_paid: str) -> models.Pay_details:
+    pay_detail = db.query(models.Pay_details).filter(
+        models.Pay_details.chit_id == chit_id,
+        models.Pay_details.week == week
+    ).first()
+    
+    if pay_detail:
+        pay_detail.is_paid = is_paid
+        db.commit()
+        db.refresh(pay_detail)
+    return pay_detail

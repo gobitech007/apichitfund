@@ -118,3 +118,22 @@ class Chit_users(Base):
     user = relationship("User", foreign_keys=[user_id])
     # creator = relationship("User", foreign_keys=[created_by])
     # updater = relationship("User", foreign_keys=[updated_by])
+
+class Pay_details(Base):
+    __tablename__ = "pay_details"
+
+    details_id = Column(Integer, primary_key=True, nullable=False, index=True)
+    chit_id = Column(Integer, ForeignKey("chit_users.chit_id", name="fk_chit_users_chit_id", use_alter=True))
+    week = Column(Integer, nullable=False)
+    is_paid = Column(String(1), nullable=False)
+    created_at = Column(DateTime, server_default=func.now()) # pylint: disable=E1102
+    updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now()) # pylint: disable=E1102
+    # created_by = Column(Integer, ForeignKey("users.user_id", ondelete="SET NULL", name="fk_chit_users_created_by", use_alter=True), nullable=True)
+    # updated_by = Column(Integer, ForeignKey("users.user_id", ondelete="SET NULL", name="fk_chit_users_updated_by", use_alter=True), nullable=True)
+    
+    # Relationships
+    # chit_users = relationship("Chit_users", foreign_keys=[chit_id])
+    # creator = relationship("User", foreign_keys=[created_by])
+    # updater = relationship("User", foreign_keys=[updated_by])
+
+
