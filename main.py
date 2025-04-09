@@ -4,7 +4,7 @@ from fastapi.openapi.utils import get_openapi
 
 from database import engine
 from models import create_tables
-from routes import router, auth_router, users_router
+from routes import router, auth_router, users_router, roles_router
 from payments.payments_routes import payments_router
 # from dynamic_tables_routes import dynamic_tables_router
 from middleware import audit_middleware
@@ -59,6 +59,7 @@ api_router = APIRouter(prefix="/api")
 api_router.include_router(router)
 api_router.include_router(auth_router)
 api_router.include_router(users_router)
+api_router.include_router(roles_router)
 api_router.include_router(payments_router)
 # api_router.include_router(dynamic_tables_router)
 
@@ -81,6 +82,12 @@ if __name__ == "__main__":
     print("  POST   /api/auth/token  - Get access token (OAuth2 form)")
     print("  POST   /api/auth/login  - Login with email/phone number")
     print("  GET    /api/auth/me     - Get current user info")
+    print("Roles endpoints:")
+    print("  GET    /api/roles/      - List all roles")
+    print("  POST   /api/roles/      - Create a new role")
+    print("  GET    /api/roles/{role_id} - Get role by ID")
+    print("  PUT    /api/roles/{role_id} - Update role")
+    print("  DELETE /api/roles/{role_id} - Delete role")
     # print("Dynamic Tables endpoints:")
     # print("  POST   /api/tables/     - Create a new table definition")
     # print("  GET    /api/tables/     - List all table definitions")

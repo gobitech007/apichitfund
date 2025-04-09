@@ -128,3 +128,21 @@ class DynamicTableQueryParams(BaseModel):
     sort_dir: Optional[str] = "asc"
     page: Optional[int] = 1
     page_size: Optional[int] = 50
+
+# Role schemas
+class RoleBase(BaseModel):
+    role_name: str
+    role_code: str
+
+class RoleCreate(RoleBase):
+    pass
+
+class RoleUpdate(BaseModel):
+    role_name: Optional[str] = None
+    role_code: Optional[str] = None
+
+class Role(RoleBase):
+    role_id: int
+
+    class Config:
+        from_attributes = True    

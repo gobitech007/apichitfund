@@ -21,7 +21,7 @@ async def get_current_user_id(request: Request, current_user = Depends(get_curre
     try:
         # First try to get from authenticated user
         if current_user:
-            return current_user.user_id
+            return current_user.fullname
     except Exception:
         # If authentication fails, fall back to request state
         pass

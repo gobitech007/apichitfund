@@ -136,4 +136,39 @@ class Pay_details(Base):
     # creator = relationship("User", foreign_keys=[created_by])
     # updater = relationship("User", foreign_keys=[updated_by])
 
+class Payment(Base):
+    __tablename__ = "pay"
+
+    pay_id = Column(Integer, primary_key=True, nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey("users.user_id", name="fk_payments_user_id", use_alter=True))
+    chit_no = Column(Integer, nullable=False)
+    amount = Column(Integer, nullable=False)
+    week_no = Column(Integer, nullable=False)
+    pay_type = Column(String(20), nullable=False)  # card, UPI, netbanking
+    pay_card = Column(String(20), nullable=True)   # credit/debit
+    pay_card_name = Column(String(100), nullable=True)
+    pay_expiry_no = Column(String(20), nullable=True)  # Changed from Integer to String
+    pay_qr = Column(String(100), nullable=True)    # For UPI
+    created_at = Column(DateTime, server_default=func.now()) # pylint: disable=E1102
+    updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now()) # pylint: disable=E1102
+    created_by = Column(String(100), ForeignKey("users.fullname", ondelete="SET NULL", name="fk_payments_created_by", use_alter=True), nullable=True)
+    updated_by = Column(String(100), ForeignKey("users.fullname", ondelete="SET NULL", name="fk_payments_updated_by", use_alter=True), nullable=True)
+    
+    # Relationships
+    user = relationship("User", foreign_keys=[user_id])
+    creator = relationship("User", foreign_keys=[created_by])
+    updater = relationship("User", foreign_keys=[updated_by])
+
+class Role(Base):
+    __tablename__ = "roles"
+    
+    role_id = Column(Integer, primary_key=True, nullable=False, index=True)
+    role_name = Column(String(100), nullable=False, unique=True, index=True)
+    role_code = Column(String(50), nullable=False, unique=True, index=True)
+    # created_at = Column(DateTime, server_default=func.now()) # pylint: disable=E1102
+    # updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now()) # pylint: disable=E1102
+    
+    # Relationships can be added here if needed, for example:
+    # users = relationship("User", back_populates="role")
+ 
 

@@ -272,7 +272,20 @@ def create_chit_user(db: Session, chit_user: "payment_schemas.ChitUserCreate", c
             raise
 
 def create_pay_details(db: Session, chit_id: int = None):
+    # Check if pay_details already exist for this chit_id
+    existing_pay_details = db.query(models.Pay_details).filter(
+        models.Pay_details.chit_id == chit_id
+    ).first()
+    
+    if existing_pay_details:
+        # Pay details already exist for this chit_id
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Pay details already exist for chit_id {chit_id}"
+        )
+    
     # Create new pay_details
+    try:
         # Try to create with all fields including audit fields
         pay_details = []
         for week in range(1, 55):
@@ -293,6 +306,12 @@ def create_pay_details(db: Session, chit_id: int = None):
             db.refresh(db_pay_details)
     
         return pay_details
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error creating pay details: {str(e)}"
+        )
     
 def get_pay_details(db: Session, chit_id: int) -> List[models.Pay_details]:
     return db.query(models.Pay_details).filter(models.Pay_details.chit_id == chit_id).all()
@@ -303,8 +322,159 @@ def update_pay_detail(db: Session, chit_id: int, week: int, is_paid: str) -> mod
         models.Pay_details.week == week
     ).first()
     
-    if pay_detail:
-        pay_detail.is_paid = is_paid
-        db.commit()
-        db.refresh(pay_detail)
+    if not pay_detail:
+        return None
+    
+    # If the pay detail is already marked as paid (Y) and we're trying to update it,
+    # return the current pay detail without making changes
+    if pay_detail.is_paid == 'Y' and is_paid == 'Y':
+        # No need to update, it's already paid
+        return pay_detail
+    
+    # If we're changing from paid (Y) to unpaid (N), we should allow this for corrections
+    # Or if we're changing from unpaid (N) to paid (Y), we should also allow this
+    pay_detail.is_paid = is_paid
+    db.commit()
+    db.refresh(pay_detail)
     return pay_detail
+
+def create_payment(db: Session, payment: "payment_schemas.PaymentCreate", current_user_id: int = None):
+    """Create a new payment record"""
+    # Check if user exists
+    db_user = get_user(db, user_id=payment.user_id)
+    if not db_user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+    
+    # Create new payment
+    try:
+        db_payment = models.Payment(
+            user_id=payment.user_id,
+            chit_no=payment.chit_no,
+            amount=payment.amount,
+            week_no=payment.week_no,
+            pay_type=payment.pay_type,
+            pay_card=payment.pay_card,
+            pay_card_name=payment.pay_card_name,
+            pay_expiry_no=payment.pay_expiry_no,
+            pay_qr=payment.pay_qr,
+            created_by=current_user_id
+        )
+        
+        db.add(db_payment)
+        db.commit()
+        db.refresh(db_payment)
+        
+        # Update the pay_details to mark the week as paid
+        # Find the chit_id based on user_id and chit_no
+        chit_user = db.query(models.Chit_users).filter(
+            models.Chit_users.user_id == payment.user_id,
+            models.Chit_users.chit_no == payment.chit_no
+        ).first()
+        
+        if chit_user:
+            # Update the pay_detail for this week
+            pay_detail = db.query(models.Pay_details).filter(
+                models.Pay_details.chit_id == chit_user.chit_id,
+                models.Pay_details.week == payment.week_no
+            ).first()
+            
+            if pay_detail:
+                pay_detail.is_paid = 'Y'
+                db.commit()
+                db.refresh(pay_detail)
+        
+        return db_payment
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error creating payment: {str(e)}"
+        )
+
+def get_payments(db: Session, skip: int = 0, limit: int = 100):
+    """Get all payments"""
+    return db.query(models.Payment).offset(skip).limit(limit).all()
+
+def get_payment(db: Session, pay_id: int):
+    """Get a specific payment by ID"""
+    return db.query(models.Payment).filter(models.Payment.pay_id == pay_id).first()
+
+def get_user_payments(db: Session, user_id: int, skip: int = 0, limit: int = 100):
+    """Get all payments for a specific user"""
+    return db.query(models.Payment).filter(models.Payment.user_id == user_id).offset(skip).limit(limit).all()
+
+# Role CRUD operations
+def get_role(db: Session, role_id: int):
+    """Get a role by ID"""
+    return db.query(models.Role).filter(models.Role.role_id == role_id).first()
+
+def get_role_by_code(db: Session, role_code: str):
+    """Get a role by code"""
+    return db.query(models.Role).filter(models.Role.role_code == role_code).first()
+
+def get_roles(db: Session, skip: int = 0, limit: int = 100):
+    """Get all roles"""
+    return db.query(models.Role).offset(skip).limit(limit).all()
+
+def create_role(db: Session, role: schemas.RoleCreate):
+    """Create a new role"""
+    # Check if role with same code exists
+    if get_role_by_code(db, role_code=role.role_code):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Role code already exists"
+        )
+    
+    # Create new role
+    db_role = models.Role(
+        role_name=role.role_name,
+        role_code=role.role_code
+    )
+    
+    db.add(db_role)
+    db.commit()
+    db.refresh(db_role)
+    return db_role
+
+def update_role(db: Session, role_id: int, role: schemas.RoleUpdate):
+    """Update an existing role"""
+    db_role = get_role(db, role_id)
+    if not db_role:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Role not found"
+        )
+    
+    # Update role fields if provided
+    role_data = role.dict(exclude_unset=True)
+    
+    # If role_code is being updated, check if it already exists
+    if "role_code" in role_data and role_data["role_code"] != db_role.role_code:
+        if get_role_by_code(db, role_code=role_data["role_code"]):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Role code already exists"
+            )
+    
+    for key, value in role_data.items():
+        setattr(db_role, key, value)
+    
+    db.commit()
+    db.refresh(db_role)
+    return db_role
+
+def delete_role(db: Session, role_id: int):
+    """Delete a role"""
+    db_role = get_role(db, role_id)
+    if not db_role:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Role not found"
+        )
+    
+    db.delete(db_role)
+    db.commit()
+    return {"message": "Role deleted successfully"}

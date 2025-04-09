@@ -121,3 +121,36 @@ def delete_user(user_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="User not found")
     crud.delete_user(db=db, user_id=user_id)
     return {"message": "User deleted successfully"}
+
+
+# Roles router
+roles_router = APIRouter(prefix="/roles", tags=["Roles"])
+
+@roles_router.get("/", response_model=list[schemas.Role])
+def read_roles(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+    """Get all roles"""
+    roles = crud.get_roles(db, skip=skip, limit=limit)
+    return roles
+
+@roles_router.post("/", response_model=schemas.Role)
+def create_role(role: schemas.RoleCreate, db: Session = Depends(get_db)):
+    """Create a new role"""
+    return crud.create_role(db=db, role=role)
+
+@roles_router.get("/{role_id}", response_model=schemas.Role)
+def read_role(role_id: int, db: Session = Depends(get_db)):
+    """Get a role by ID"""
+    db_role = crud.get_role(db, role_id=role_id)
+    if db_role is None:
+        raise HTTPException(status_code=404, detail="Role not found")
+    return db_role
+
+@roles_router.put("/{role_id}", response_model=schemas.Role)
+def update_role(role_id: int, role: schemas.RoleUpdate, db: Session = Depends(get_db)):
+    """Update a role"""
+    return crud.update_role(db=db, role_id=role_id, role=role)
+
+@roles_router.delete("/{role_id}")
+def delete_role(role_id: int, db: Session = Depends(get_db)):
+    """Delete a role"""
+    return crud.delete_role(db=db, role_id=role_id)
