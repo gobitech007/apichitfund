@@ -1,13 +1,17 @@
-from fastapi import FastAPI, APIRouter
+from fastapi import FastAPI, APIRouter, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
 
 from database import engine
 from models import create_tables
-from routes import router, auth_router, users_router
+from routes import router, auth_router, users_router, payments_router
+from dynamic_tables_routes import dynamic_tables_router
+from middleware import audit_middleware
+from migrations import run_migrations
 
-# Create tables
+# Create tables and run migrations
 create_tables(engine)
+run_migrations()
 
 # FastAPI app
 app = FastAPI(
@@ -26,6 +30,11 @@ app.add_middleware(
     allow_headers=["Content-Type", "Authorization", "Accept"],
     expose_headers=["Content-Type"]
 )
+
+# Add audit middleware
+@app.middleware("http")
+async def audit_middleware_wrapper(request: Request, call_next):
+    return await audit_middleware(request, call_next)
 
 # Custom OpenAPI schema
 def custom_openapi():
@@ -49,6 +58,8 @@ api_router = APIRouter(prefix="/api")
 api_router.include_router(router)
 api_router.include_router(auth_router)
 api_router.include_router(users_router)
+api_router.include_router(payments_router)
+# api_router.include_router(dynamic_tables_router)
 
 # Include the API router in the main app
 app.include_router(api_router)
@@ -69,4 +80,19 @@ if __name__ == "__main__":
     print("  POST   /api/auth/token  - Get access token (OAuth2 form)")
     print("  POST   /api/auth/login  - Login with email/phone number")
     print("  GET    /api/auth/me     - Get current user info")
+    # print("Dynamic Tables endpoints:")
+    # print("  POST   /api/tables/     - Create a new table definition")
+    # print("  GET    /api/tables/     - List all table definitions")
+    # print("  GET    /api/tables/{table_id} - Get table definition by ID")
+    # print("  PUT    /api/tables/{table_id} - Update table definition")
+    # print("  DELETE /api/tables/{table_id} - Delete table definition")
+    # print("  POST   /api/tables/{table_id}/columns - Add a column to a table")
+    # print("  GET    /api/tables/{table_id}/columns - List all columns in a table")
+    # print("  POST   /api/tables/{table_id}/data - Add a row of data to a table")
+    # print("  GET    /api/tables/{table_id}/data - List all rows in a table")
+    print("Payments endpoints:")
+    print("  GET    /api/payments/chits/ - List all chits")
+    print("  GET    /api/payments/chits/user/{user_id} - List all chits for a specific user")
+    print("  POST   /api/payments/chit_users/ - Create a new chit user association")
+    print("  PATCH  /api/payments/chits/{user_id} - Update amount for a specific chit")
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True, log_level="info")

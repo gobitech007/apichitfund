@@ -75,6 +75,69 @@ Once the server is running, you can access the API documentation at:
 - `PUT /users/{user_id}` - Update user
 - `DELETE /users/{user_id}` - Delete user
 
+### Payments and Chits
+
+- `GET /payments/chits/` - List all chits
+- `GET /payments/chits/user/{user_id}` - List all chits for a specific user
+- `POST /payments/chit_users/` - Create a new chit user association
+- `PATCH /payments/chits/{chit_id}` - Update amount for a specific chit
+
+#### Chit User Creation
+
+To create a new chit user association:
+
+```bash
+POST /payments/chit_users/
+```
+
+Request body:
+```json
+{
+  "user_id": 123,  # ID of an existing user
+  "chit_no": 456,  # Chit number to associate with the user
+  "amount": 10000  # Optional initial amount
+}
+```
+
+Response:
+```json
+{
+  "chit_id": 789,  # Generated chit ID
+  "user_id": 123,
+  "chit_no": 456,
+  "amount": 10000
+}
+```
+
+This endpoint will verify that the user exists before creating the association.
+
+#### Chit Amount Update
+
+To update the amount for a specific chit:
+
+```bash
+PATCH /payments/chits/{chit_id}
+```
+
+Request body:
+```json
+{
+  "amount": 15000  # New amount for the chit
+}
+```
+
+Response:
+```json
+{
+  "chit_id": 789,
+  "user_id": 123,
+  "chit_no": 456,
+  "amount": 15000
+}
+```
+
+This endpoint will verify that the chit exists before updating the amount.
+
 ## Development
 
 ### Debugging with VS Code
