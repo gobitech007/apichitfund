@@ -57,6 +57,8 @@ def create_user(db: Session, user: schemas.UserCreate, current_user_id: int = No
 
     # Create new user with hashed password
     hashed_password = auth.get_password_hash(password)
+    if user.role is None:
+        user.role = "customer"
     
     try:
         # Try to create with all fields including audit fields
@@ -66,7 +68,9 @@ def create_user(db: Session, user: schemas.UserCreate, current_user_id: int = No
             phone=user.phone,
             aadhar=user.aadhar,
             dob=user.dob,
-            password=hashed_password
+            password=hashed_password,
+            pin= user.pin,
+            role= user.role
         )
         
         # Add audit fields
@@ -99,7 +103,7 @@ def create_user(db: Session, user: schemas.UserCreate, current_user_id: int = No
 
     # Return the generated password if one was created
     result = db_user
-    create_chit_user(db, payment_schemas.ChitUserCreate(user_id=db_user.user_id, chit_no=1), current_user_id)
+    create_chit_user(db, payment_schemas.ChitUserCreate(user_id=db_user.user_id, chit_no=1))
     if generated_password:
         # We need to convert the ORM model to a dict and add the password
         # We can't modify the SQLAlchemy model directly
@@ -110,12 +114,14 @@ def create_user(db: Session, user: schemas.UserCreate, current_user_id: int = No
             "phone": db_user.phone,
             "aadhar": db_user.aadhar,
             "dob": db_user.dob,
-            "generated_password": generated_password
+            "generated_password": generated_password,
+            "pin": db_user.pin,
+            "role": db_user.role
         }
 
     return result
 
-def update_user(db: Session, user_id: int, user: schemas.UserUpdate, current_user_id: int = None):
+def update_user(db: Session, user_id: int, user: schemas.UserUpdate, current_user_id: str = None):
     db_user = get_user(db, user_id)
     if not db_user:
         raise HTTPException(
@@ -137,6 +143,8 @@ def update_user(db: Session, user_id: int, user: schemas.UserUpdate, current_use
     try:
         # Add audit fields
         # add_audit_fields(db_user, current_user_id, is_new=False)
+        if current_user_id:
+            db_user["updated_by"] = current_user_id
 
         db.commit()
         db.refresh(db_user)

@@ -9,6 +9,22 @@ class UserBase(BaseModel):
     phone: str
     aadhar: str
     dob: date
+    pin: int
+    role: Optional[str] = None
+    
+    class Config:
+        json_encoders = {
+            date: lambda v: v.isoformat(),
+        }
+        
+    @validator('dob', pre=True)
+    def parse_dob(cls, value):
+        if isinstance(value, str):
+            try:
+                return date.fromisoformat(value)
+            except ValueError:
+                raise ValueError("Invalid date format. Use YYYY-MM-DD")
+        return value
 
 class UserCreate(UserBase):
     password: Optional[str] = None
@@ -20,6 +36,8 @@ class UserUpdate(BaseModel):
     aadhar: Optional[str] = None
     dob: Optional[date] = None
     password: Optional[str] = None
+    pin: Optional[int] = None
+    role: Optional[str] = None
 
 class User(UserBase):
     user_id: int

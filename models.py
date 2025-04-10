@@ -14,10 +14,13 @@ class User(Base):
     aadhar = Column(String(20), nullable=False, unique=True, index=True)
     dob = Column(Date, nullable=False)
     password = Column(String(100), nullable=False)
+    pin = Column(Integer, nullable=True)
+    role = Column(String(20), nullable=False)
     created_at = Column(DateTime, server_default=func.now()) # pylint: disable=E1102
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now()) # pylint: disable=E1102
-    # created_by = Column(Integer, ForeignKey("users.user_id", ondelete="SET NULL"), nullable=True)
-    # updated_by = Column(Integer, ForeignKey("users.user_id", ondelete="SET NULL"), nullable=True)
+    # created_by = Column(String(100), ForeignKey("users.fullname", ondelete="SET NULL", name="fk_users_created_by", use_alter=True), nullable=True)
+    # updated_by = Column(String(100), ForeignKey("users.fullname", ondelete="SET NULL", name="fk_users_updated_by", use_alter=True), nullable=True)
+    
     
     # Self-referential relationships
     # created_by_user = relationship("User", foreign_keys=[created_by], remote_side=[user_id], backref="created_users")
@@ -33,68 +36,68 @@ class ColumnType(enum.Enum):
     TEXT = "text"
     JSON = "json"
 
-class TableDefinition(Base):
-    __tablename__ = "table_definitions"
+# class TableDefinition(Base):
+#     __tablename__ = "table_definitions"
 
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(String(100), nullable=False, unique=True, index=True)
-    description = Column(String(255), nullable=True)
-    created_at = Column(DateTime, server_default=func.now()) # pylint: disable=E1102
-    updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now()) # pylint: disable=E1102
-    # created_by = Column(Integer, ForeignKey("users.user_id", ondelete="SET NULL"), nullable=True)
-    # updated_by = Column(Integer, ForeignKey("users.user_id", ondelete="SET NULL"), nullable=True)
+#     id = Column(Integer, primary_key=True, index=True)
+#     name = Column(String(100), nullable=False, unique=True, index=True)
+#     description = Column(String(255), nullable=True)
+#     created_at = Column(DateTime, server_default=func.now()) # pylint: disable=E1102
+#     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now()) # pylint: disable=E1102
+#     # created_by = Column(Integer, ForeignKey("users.user_id", ondelete="SET NULL"), nullable=True)
+#     # updated_by = Column(Integer, ForeignKey("users.user_id", ondelete="SET NULL"), nullable=True)
 
-    # Relationships
-    columns = relationship("ColumnDefinition", back_populates="table", cascade="all, delete-orphan")
+#     # Relationships
+#     columns = relationship("ColumnDefinition", back_populates="table", cascade="all, delete-orphan")
     # creator = relationship("User", foreign_keys=[created_by])
     # updater = relationship("User", foreign_keys=[updated_by])
 
-class ColumnDefinition(Base):
-    __tablename__ = "column_definitions"
+# class ColumnDefinition(Base):
+#     __tablename__ = "column_definitions"
 
-    id = Column(Integer, primary_key=True, index=True)
-    table_id = Column(Integer, ForeignKey("table_definitions.id", ondelete="CASCADE"), nullable=False)
-    name = Column(String(100), nullable=False)
-    description = Column(String(255), nullable=True)
-    column_type = Column(String(50), nullable=False)  # Uses ColumnType enum values
-    is_required = Column(Boolean, default=False)
-    is_unique = Column(Boolean, default=False)
-    is_primary_key = Column(Boolean, default=False)
-    is_index = Column(Boolean, default=False)
-    default_value = Column(String(255), nullable=True)
-    max_length = Column(Integer, nullable=True)  # For string/text types
-    created_at = Column(DateTime, server_default=func.now()) # pylint: disable=E1102
-    updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now()) # pylint: disable=E1102
-    # created_by = Column(Integer, ForeignKey("users.user_id", ondelete="SET NULL"), nullable=True)
-    # updated_by = Column(Integer, ForeignKey("users.user_id", ondelete="SET NULL"), nullable=True)
+#     id = Column(Integer, primary_key=True, index=True)
+#     table_id = Column(Integer, ForeignKey("table_definitions.id", ondelete="CASCADE"), nullable=False)
+#     name = Column(String(100), nullable=False)
+#     description = Column(String(255), nullable=True)
+#     column_type = Column(String(50), nullable=False)  # Uses ColumnType enum values
+#     is_required = Column(Boolean, default=False)
+#     is_unique = Column(Boolean, default=False)
+#     is_primary_key = Column(Boolean, default=False)
+#     is_index = Column(Boolean, default=False)
+#     default_value = Column(String(255), nullable=True)
+#     max_length = Column(Integer, nullable=True)  # For string/text types
+#     created_at = Column(DateTime, server_default=func.now()) # pylint: disable=E1102
+#     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now()) # pylint: disable=E1102
+#     # created_by = Column(Integer, ForeignKey("users.user_id", ondelete="SET NULL"), nullable=True)
+#     # updated_by = Column(Integer, ForeignKey("users.user_id", ondelete="SET NULL"), nullable=True)
     
-    # Relationships
-    # creator = relationship("User", foreign_keys=[created_by])
-    # updater = relationship("User", foreign_keys=[updated_by])
+#     # Relationships
+#     # creator = relationship("User", foreign_keys=[created_by])
+#     # updater = relationship("User", foreign_keys=[updated_by])
 
-    # Relationships
-    table = relationship("TableDefinition", back_populates="columns")
+#     # Relationships
+#     table = relationship("TableDefinition", back_populates="columns")
 
-    __table_args__ = (
-        # Ensure column names are unique within a table
-        {'sqlite_autoincrement': True},
-    )
+#     __table_args__ = (
+#         # Ensure column names are unique within a table
+#         {'sqlite_autoincrement': True},
+#     )
 
-class DynamicTableData(Base):
-    __tablename__ = "dynamic_table_data"
+# class DynamicTableData(Base):
+#     __tablename__ = "dynamic_table_data"
 
-    id = Column(Integer, primary_key=True, index=True)
-    table_id = Column(Integer, ForeignKey("table_definitions.id", ondelete="CASCADE"), nullable=False)
-    data = Column(JSON, nullable=False)  # Stores the row data as JSON
-    created_at = Column(DateTime, server_default=func.now()) # pylint: disable=E1102
-    updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now()) # pylint: disable=E1102
-    # created_by = Column(Integer, ForeignKey("users.user_id", ondelete="SET NULL"), nullable=True)
-    # updated_by = Column(Integer, ForeignKey("users.user_id", ondelete="SET NULL"), nullable=True)
+#     id = Column(Integer, primary_key=True, index=True)
+#     table_id = Column(Integer, ForeignKey("table_definitions.id", ondelete="CASCADE"), nullable=False)
+#     data = Column(JSON, nullable=False)  # Stores the row data as JSON
+#     created_at = Column(DateTime, server_default=func.now()) # pylint: disable=E1102
+#     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now()) # pylint: disable=E1102
+#     # created_by = Column(Integer, ForeignKey("users.user_id", ondelete="SET NULL"), nullable=True)
+#     # updated_by = Column(Integer, ForeignKey("users.user_id", ondelete="SET NULL"), nullable=True)
 
-    # Relationships
-    table = relationship("TableDefinition")
-    # creator = relationship("User", foreign_keys=[created_by])
-    # updater = relationship("User", foreign_keys=[updated_by])
+#     # Relationships
+#     table = relationship("TableDefinition")
+#     # creator = relationship("User", foreign_keys=[created_by])
+#     # updater = relationship("User", foreign_keys=[updated_by])
 
 def create_tables(engine):
     """
@@ -161,7 +164,7 @@ class Payment(Base):
 
 class Role(Base):
     __tablename__ = "roles"
-    
+   
     role_id = Column(Integer, primary_key=True, nullable=False, index=True)
     role_name = Column(String(100), nullable=False, unique=True, index=True)
     role_code = Column(String(50), nullable=False, unique=True, index=True)

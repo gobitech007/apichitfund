@@ -92,12 +92,12 @@ def read_users(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     return users
 
 @users_router.post("/", response_model=schemas.UserCreateResponse)
-def create_user(user: schemas.UserCreate, request: Request, db: Session = Depends(get_db), current_user_id: Optional[int] = Depends(get_current_user_id)):
+def create_user(user: schemas.UserCreate, request: Request, db: Session = Depends(get_db)):
     db_user = crud.get_user_by_email(db, email=user.email)
     if db_user:
         raise HTTPException(status_code=400, detail="Email already registered")
     
-    return crud.create_user(db=db, user=user, current_user_id=current_user_id)
+    return crud.create_user(db=db, user=user)
 
 @users_router.get("/{user_id}", response_model=schemas.User)
 def read_user(user_id: int, db: Session = Depends(get_db)):
