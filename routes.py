@@ -3,6 +3,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from datetime import timedelta
 from typing import Optional
+from jose import JWTError, jwt
 
 import crud
 import schemas
@@ -12,6 +13,7 @@ from auth import (
     authenticate_user,
     create_access_token,
     get_current_user,
+    blacklist_token,
     ACCESS_TOKEN_EXPIRE_MINUTES
 )
 from utils import get_current_user_id
@@ -82,6 +84,78 @@ async def login(login_data: schemas.UserLogin, db: Session = Depends(get_db)):
 @auth_router.get("/me", response_model=schemas.User)
 async def read_users_me(current_user = Depends(get_current_user)):
     return current_user
+
+@auth_router.get("/validate-token")
+async def validate_token(request: Request, db: Session = Depends(get_db)):
+    """
+    Validate a token without requiring authentication.
+    This endpoint checks if a token is valid and not blacklisted.
+    """
+    # Get the authorization header
+    authorization = request.headers.get("Authorization")
+    
+    # If no authorization header is provided, return invalid
+    if not authorization:
+        return {"valid": False, "message": "No token provided"}
+    
+    # Extract the token from the authorization header
+    try:
+        scheme, token = authorization.split()
+        if scheme.lower() != "bearer":
+            return {"valid": False, "message": "Invalid token format"}
+    except ValueError:
+        return {"valid": False, "message": "Invalid authorization header format"}
+    
+    # Check if the token is blacklisted
+    if auth.is_token_blacklisted(token):
+        return {"valid": False, "message": "Token is blacklisted"}
+    
+    # Validate the token
+    try:
+        payload = jwt.decode(token, auth.SECRET_KEY, algorithms=[auth.ALGORITHM])
+        email = payload.get("sub")
+        if email is None:
+            return {"valid": False, "message": "Invalid token payload"}
+        
+        # Check if the user exists
+        user = crud.get_user_by_email(db, email=email)
+        if user is None:
+            return {"valid": False, "message": "User not found"}
+        
+        return {"valid": True, "message": "Token is valid"}
+    except JWTError:
+        return {"valid": False, "message": "Invalid token"}
+    except Exception as e:
+        return {"valid": False, "message": f"Error validating token: {str(e)}"}
+
+@auth_router.post("/logout")
+async def logout(request: Request):
+    """
+    Logout endpoint to invalidate the current user's session.
+    This endpoint will attempt to invalidate the token if provided.
+    """
+    # Get the authorization header
+    authorization = request.headers.get("Authorization")
+    
+    # If no authorization header is provided, just return success
+    # This allows clients to call logout even if they don't have a token
+    if not authorization:
+        return {"message": "Successfully logged out"}
+    
+    # Extract the token from the authorization header
+    try:
+        scheme, token = authorization.split()
+        if scheme.lower() != "bearer":
+            return {"message": "Successfully logged out"}
+    except ValueError:
+        return {"message": "Successfully logged out"}
+    
+    # Add the token to the blacklist if it exists
+    if token:
+        blacklist_token(token)
+    
+    # Note: The client should also remove the token from localStorage
+    return {"message": "Successfully logged out"}
 
 # Users router
 users_router = APIRouter(prefix="/users", tags=["Users"])

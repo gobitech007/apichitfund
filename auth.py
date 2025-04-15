@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 import random
 import string
-from typing import Optional
+from typing import Optional, Set
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
@@ -12,6 +12,10 @@ import crud
 import schemas
 from database import get_db
 
+# Simple in-memory token blacklist
+# In a production environment, this should be replaced with a Redis cache or database
+TOKEN_BLACKLIST: Set[str] = set()
+
 # Define __all__ to explicitly export functions
 __all__ = [
     'verify_password',
@@ -21,6 +25,9 @@ __all__ = [
     'authenticate_user_by_identifier',
     'create_access_token',
     'get_current_user',
+    'blacklist_token',
+    'is_token_blacklisted',
+    'TOKEN_BLACKLIST',
     'SECRET_KEY',
     'ALGORITHM',
     'ACCESS_TOKEN_EXPIRE_MINUTES'
@@ -100,6 +107,20 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
+# Token blacklist functions
+def blacklist_token(token: str):
+    """Add a token to the blacklist"""
+    if token and isinstance(token, str) and token.strip():
+        TOKEN_BLACKLIST.add(token.strip())
+        return True
+    return False
+
+def is_token_blacklisted(token: str) -> bool:
+    """Check if a token is blacklisted"""
+    if not token or not isinstance(token, str):
+        return False
+    return token.strip() in TOKEN_BLACKLIST
+
 # Get current user from token
 async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
     credentials_exception = HTTPException(
@@ -107,6 +128,15 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
         detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
+    
+    # Check if token is blacklisted
+    if is_token_blacklisted(token):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token has been invalidated",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         email: str = payload.get("sub")

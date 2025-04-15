@@ -63,6 +63,8 @@ class UserLogin(BaseModel):
     email: Optional[EmailStr] = None
     phone: Optional[str] = None
     aadhar: Optional[str] = None
+    # password: Optional[str] = None
+    # pin: Optional[str] = None
 
 # Dynamic Table Schemas
 class ColumnTypeEnum(str, Enum):
