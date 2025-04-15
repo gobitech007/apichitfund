@@ -356,6 +356,18 @@ def create_payment(db: Session, payment: "payment_schemas.PaymentCreate", curren
             detail="User not found"
         )
     
+    # Generate a random transaction ID if not provided
+    import random
+    import time
+    
+    # Use the provided transaction_id or generate a new one
+    transaction_id = payment.transaction_id
+    if not transaction_id:
+        # Generate a unique transaction ID: timestamp + random number
+        timestamp = int(time.time())
+        random_num = random.randint(1000, 9999)
+        transaction_id = f"TXN{timestamp}{random_num}"
+    
     # Create new payment
     try:
         db_payment = models.Payment(
@@ -368,6 +380,7 @@ def create_payment(db: Session, payment: "payment_schemas.PaymentCreate", curren
             pay_card_name=payment.pay_card_name,
             pay_expiry_no=payment.pay_expiry_no,
             pay_qr=payment.pay_qr,
+            transaction_id=transaction_id,
             created_by=current_user_id
         )
         
@@ -383,6 +396,12 @@ def create_payment(db: Session, payment: "payment_schemas.PaymentCreate", curren
         ).first()
         
         if chit_user:
+            # Update the chit user's amount if needed
+            if payment.amount and (chit_user.amount is None or chit_user.amount != payment.amount):
+                chit_user.amount = payment.amount
+                db.commit()
+                db.refresh(chit_user)
+            
             # Update the pay_detail for this week
             pay_detail = db.query(models.Pay_details).filter(
                 models.Pay_details.chit_id == chit_user.chit_id,
@@ -393,7 +412,39 @@ def create_payment(db: Session, payment: "payment_schemas.PaymentCreate", curren
                 pay_detail.is_paid = 'Y'
                 db.commit()
                 db.refresh(pay_detail)
+            else:
+                # If pay_detail doesn't exist for some reason, create it
+                new_pay_detail = models.Pay_details(
+                    chit_id=chit_user.chit_id,
+                    week=payment.week_no,
+                    is_paid='Y'
+                )
+                db.add(new_pay_detail)
+                db.commit()
+                db.refresh(new_pay_detail)
+        else:
+            # If chit_user doesn't exist, create it
+            new_chit_user = models.Chit_users(
+                user_id=payment.user_id,
+                chit_no=payment.chit_no,
+                amount=payment.amount
+            )
+            db.add(new_chit_user)
+            db.commit()
+            db.refresh(new_chit_user)
+            
+            # Create pay_detail for this week
+            new_pay_detail = models.Pay_details(
+                chit_id=new_chit_user.chit_id,
+                week=payment.week_no,
+                is_paid='Y'
+            )
+            db.add(new_pay_detail)
+            db.commit()
+            db.refresh(new_pay_detail)
         
+        # Add transaction_id to the payment response
+        db_payment.transaction_id = transaction_id
         return db_payment
     except Exception as e:
         db.rollback()
@@ -409,6 +460,15 @@ def get_payments(db: Session, skip: int = 0, limit: int = 100):
 def get_payment(db: Session, pay_id: int):
     """Get a specific payment by ID"""
     return db.query(models.Payment).filter(models.Payment.pay_id == pay_id).first()
+
+def get_payments_by_transaction_id(db: Session, transaction_id: str):
+    """Get all payments with the same transaction ID prefix"""
+    # Use LIKE query to match transaction IDs with the same prefix
+    # This handles cases where transaction_id is in format "TXN12345-W1", "TXN12345-W2", etc.
+    base_transaction_id = transaction_id.split('-')[0]
+    return db.query(models.Payment).filter(
+        models.Payment.transaction_id.like(f"{base_transaction_id}%")
+    ).all()
 
 def get_user_payments(db: Session, user_id: int, skip: int = 0, limit: int = 100):
     """Get all payments for a specific user"""

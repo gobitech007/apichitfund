@@ -160,6 +160,18 @@ def read_payments(
     payments = crud.get_payments(db=db, skip=skip, limit=limit)
     return payments
 
+@payments_router.get("/transaction/{transaction_id}", response_model=List[payment_schemas.PaymentResponse])
+def read_payments_by_transaction_id(
+    transaction_id: str,
+    db: Session = Depends(get_db),
+    current_user_id: Optional[int] = Depends(get_current_user_id)
+):
+    """Get all payments with the same transaction ID prefix"""
+    payments = crud.get_payments_by_transaction_id(db=db, transaction_id=transaction_id)
+    if not payments:
+        raise HTTPException(status_code=404, detail="No payments found for this transaction ID")
+    return payments
+
 @payments_router.get("/{pay_id}", response_model=payment_schemas.PaymentResponse)
 def read_payment(
     pay_id: int,

@@ -75,6 +75,7 @@ class PaymentCreate(PaymentBase):
     pay_card_name: Optional[str] = None
     pay_expiry_no: Optional[str] = None
     pay_qr: Optional[str] = None
+    transaction_id: Optional[str] = None
     
     # @validator('pay_card')
     def validate_pay_card(self, v, values):
@@ -99,6 +100,7 @@ class PaymentCreate(PaymentBase):
 
 class PaymentResponse(PaymentBase):
     pay_id: int
+    transaction_id: Optional[str] = None
     pay_card: Optional[str] = None
     pay_card_name: Optional[str] = None
     pay_expiry_no: Optional[str] = None

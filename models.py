@@ -152,6 +152,7 @@ class Payment(Base):
     pay_card_name = Column(String(100), nullable=True)
     pay_expiry_no = Column(String(20), nullable=True)  # Changed from Integer to String
     pay_qr = Column(String(100), nullable=True)    # For UPI
+    transaction_id = Column(String(50), nullable=True)  # Unique transaction ID
     created_at = Column(DateTime, server_default=func.now()) # pylint: disable=E1102
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now()) # pylint: disable=E1102
     created_by = Column(String(100), ForeignKey("users.fullname", ondelete="SET NULL", name="fk_payments_created_by", use_alter=True), nullable=True)
