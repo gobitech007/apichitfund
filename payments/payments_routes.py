@@ -24,7 +24,7 @@ def chit_list_read(skip: int = 0, limit: int = 100, db: Session = Depends(get_db
     chit_list = crud.get_chit_list(db, skip=skip, limit=limit)
     return chit_list
 
-@payments_router.get("/chits/user/{user_id}", response_model=list[payment_schemas.ChitSchemaBase])
+@payments_router.get("/chits/user/{user_id}", response_model=list[payment_schemas.ChitUserResponse])
 def get_user_chits(user_id: int, skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     # Check if user exists
     db_user = crud.get_user(db, user_id=user_id)
