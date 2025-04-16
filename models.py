@@ -153,6 +153,7 @@ class Payment(Base):
     pay_expiry_no = Column(String(20), nullable=True)  # Changed from Integer to String
     pay_qr = Column(String(100), nullable=True)    # For UPI
     transaction_id = Column(String(50), nullable=True)  # Unique transaction ID
+    status = Column(String(20), nullable=False)  # completed/pending/failure
     created_at = Column(DateTime, server_default=func.now()) # pylint: disable=E1102
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now()) # pylint: disable=E1102
     created_by = Column(String(100), ForeignKey("users.fullname", ondelete="SET NULL", name="fk_payments_created_by", use_alter=True), nullable=True)
@@ -174,5 +175,18 @@ class Role(Base):
     
     # Relationships can be added here if needed, for example:
     # users = relationship("User", back_populates="role")
+
+class UserLoginHistory(Base):
+    __tablename__ = "user_login_history"
+    
+    user_login_id = Column(Integer, primary_key=True, nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey("users.user_id", name="fk_login_history_user_id", use_alter=True))
+    login_date = Column(DateTime, server_default=func.now(), nullable=False)
+    device_details = Column(JSON, nullable=True)  # Store device info as JSON
+    ip_address = Column(String(50), nullable=True)
+    login_status = Column(String(20), nullable=True)  # success, failed, etc.
+    
+    # Relationship to User
+    user = relationship("User", foreign_keys=[user_id])
  
 

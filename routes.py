@@ -37,14 +37,42 @@ async def cors_check():
     return {"status": "ok", "cors": "enabled"}
 
 @auth_router.post("/token", response_model=schemas.Token)
-async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+async def login_for_access_token(request: Request, db: Session = Depends(get_db), form_data: OAuth2PasswordRequestForm = Depends()):
     user = authenticate_user(db, form_data.username, form_data.password)
     if not user:
+        # Try to find user by email to get user_id for failed login record
+        potential_user = crud.get_user_by_email(db, email=form_data.username)
+        if potential_user:
+            # Record failed login
+            login_history = schemas.UserLoginHistoryCreate(
+                user_id=potential_user.user_id,
+                device_details={
+                    "user_agent": request.headers.get("user-agent", ""),
+                    "host": request.client.host if request.client else "unknown"
+                },
+                ip_address=request.client.host if request.client else None,
+                login_status="failed"
+            )
+            crud.create_login_history(db, login_history)
+            
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
+        
+    # Record successful login
+    login_history = schemas.UserLoginHistoryCreate(
+        user_id=user.user_id,
+        device_details={
+            "user_agent": request.headers.get("user-agent", ""),
+            "host": request.client.host if request.client else "unknown"
+        },
+        ip_address=request.client.host if request.client else None,
+        login_status="success"
+    )
+    crud.create_login_history(db, login_history)
+    
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
         data={"sub": user.email}, expires_delta=access_token_expires
@@ -52,7 +80,7 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
     return {"access_token": access_token, "token_type": "bearer"}
 
 @auth_router.post("/login", response_model=schemas.Token)
-async def login(login_data: schemas.UserLogin, db: Session = Depends(get_db)):
+async def login(login_data: schemas.UserLogin, request: Request, db: Session = Depends(get_db)):
     # Check if at least one identifier is provided
     if not login_data.email and not login_data.phone and not login_data.aadhar:
         raise HTTPException(
@@ -69,11 +97,40 @@ async def login(login_data: schemas.UserLogin, db: Session = Depends(get_db)):
     )
 
     if not user:
+        # Record failed login attempt if email was provided
+        if login_data.email:
+            # Try to find user by email to get user_id
+            potential_user = crud.get_user_by_email(db, email=login_data.email)
+            if potential_user:
+                # Record failed login
+                login_history = schemas.UserLoginHistoryCreate(
+                    user_id=potential_user.user_id,
+                    device_details={
+                        "user_agent": request.headers.get("user-agent", ""),
+                        "host": request.client.host if request.client else "unknown"
+                    },
+                    ip_address=request.client.host if request.client else None,
+                    login_status="failed"
+                )
+                crud.create_login_history(db, login_history)
+        
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="User not found with provided credentials",
             headers={"WWW-Authenticate": "Bearer"},
         )
+
+    # Record successful login
+    login_history = schemas.UserLoginHistoryCreate(
+        user_id=user.user_id,
+        device_details={
+            "user_agent": request.headers.get("user-agent", ""),
+            "host": request.client.host if request.client else "unknown"
+        },
+        ip_address=request.client.host if request.client else None,
+        login_status="success"
+    )
+    crud.create_login_history(db, login_history)
 
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
@@ -196,6 +253,27 @@ def delete_user(user_id: int, db: Session = Depends(get_db)):
     crud.delete_user(db=db, user_id=user_id)
     return {"message": "User deleted successfully"}
 
+
+# Login History router
+login_history_router = APIRouter(prefix="/login-history", tags=["Login History"])
+
+@login_history_router.get("/", response_model=list[schemas.UserLoginHistory])
+def read_all_login_history(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+    """Get all login history entries"""
+    return crud.get_all_login_history(db, skip=skip, limit=limit)
+
+@login_history_router.get("/user/{user_id}", response_model=list[schemas.UserLoginHistory])
+def read_user_login_history(user_id: int, skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+    """Get login history for a specific user"""
+    return crud.get_user_login_history(db, user_id=user_id, skip=skip, limit=limit)
+
+@login_history_router.get("/{user_login_id}", response_model=schemas.UserLoginHistory)
+def read_login_history(user_login_id: int, db: Session = Depends(get_db)):
+    """Get a login history entry by ID"""
+    login_history = crud.get_login_history(db, user_login_id=user_login_id)
+    if login_history is None:
+        raise HTTPException(status_code=404, detail="Login history entry not found")
+    return login_history
 
 # Roles router
 roles_router = APIRouter(prefix="/roles", tags=["Roles"])

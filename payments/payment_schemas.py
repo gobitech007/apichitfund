@@ -76,6 +76,7 @@ class PaymentCreate(PaymentBase):
     pay_expiry_no: Optional[str] = None
     pay_qr: Optional[str] = None
     transaction_id: Optional[str] = None
+    status: str  # completed/pending/failure
     
     # @validator('pay_card')
     def validate_pay_card(self, v, values):
@@ -105,10 +106,23 @@ class PaymentResponse(PaymentBase):
     pay_card_name: Optional[str] = None
     pay_expiry_no: Optional[str] = None
     pay_qr: Optional[str] = None
+    status: str
     created_at: datetime
     updated_at: datetime
     created_by: Optional[str] = None
     updated_by: Optional[str] = None
+    
+    class Config:
+        from_attributes = True
+
+class TransactionHistoryResponse(BaseModel):
+    chit_id: int
+    user_id: int
+    chit_no: int
+    amount: Optional[int] = None
+    week: int
+    is_paid: str
+    payment: Optional[PaymentResponse] = None
     
     class Config:
         from_attributes = True

@@ -200,3 +200,39 @@ def read_user_payments(
         
     payments = crud.get_user_payments(db=db, user_id=user_id, skip=skip, limit=limit)
     return payments
+
+@payments_router.get("/transaction-history/", response_model=List[payment_schemas.TransactionHistoryResponse])
+def get_transaction_history(
+    user_id: Optional[int] = None,
+    chit_no: Optional[int] = None,
+    skip: int = 0,
+    limit: int = 100,
+    db: Session = Depends(get_db),
+    current_user_id: Optional[int] = Depends(get_current_user_id)
+):
+    """
+    Get transaction history combining data from chit_users, pay_details, and pay tables
+    
+    This endpoint provides a comprehensive view of all transactions, including:
+    - Chit user information (user_id, chit_no, amount)
+    - Payment details (week, payment status)
+    - Payment information (payment method, transaction ID, etc.)
+    
+    You can filter by user_id and/or chit_no.
+    """
+    # If user_id is provided, check if user exists
+    if user_id:
+        db_user = crud.get_user(db, user_id=user_id)
+        if db_user is None:
+            raise HTTPException(status_code=404, detail="User not found")
+    
+    # Get transaction history
+    transactions = crud.get_transaction_history(
+        db=db, 
+        user_id=user_id, 
+        chit_no=chit_no, 
+        skip=skip, 
+        limit=limit
+    )
+    
+    return transactions

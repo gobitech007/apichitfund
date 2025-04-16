@@ -166,3 +166,20 @@ class Role(RoleBase):
 
     class Config:
         from_attributes = True    
+
+# Login History schemas
+class UserLoginHistoryBase(BaseModel):
+    user_id: int
+    device_details: Optional[Dict[str, Any]] = None
+    ip_address: Optional[str] = None
+    login_status: Optional[str] = None
+
+class UserLoginHistoryCreate(UserLoginHistoryBase):
+    pass
+
+class UserLoginHistory(UserLoginHistoryBase):
+    user_login_id: int
+    login_date: datetime
+
+    class Config:
+        from_attributes = True

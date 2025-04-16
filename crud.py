@@ -546,3 +546,94 @@ def delete_role(db: Session, role_id: int):
     db.delete(db_role)
     db.commit()
     return {"message": "Role deleted successfully"}
+
+# Login History CRUD operations
+def create_login_history(db: Session, login_history: schemas.UserLoginHistoryCreate):
+    """Create a new login history entry"""
+    db_login_history = models.UserLoginHistory(
+        user_id=login_history.user_id,
+        device_details=login_history.device_details,
+        ip_address=login_history.ip_address,
+        login_status=login_history.login_status
+    )
+    db.add(db_login_history)
+    db.commit()
+    db.refresh(db_login_history)
+    return db_login_history
+
+def get_login_history(db: Session, user_login_id: int):
+    """Get a login history entry by ID"""
+    return db.query(models.UserLoginHistory).filter(models.UserLoginHistory.user_login_id == user_login_id).first()
+
+def get_user_login_history(db: Session, user_id: int, skip: int = 0, limit: int = 100):
+    """Get login history for a specific user"""
+    return db.query(models.UserLoginHistory).filter(
+        models.UserLoginHistory.user_id == user_id
+    ).order_by(models.UserLoginHistory.login_date.desc()).offset(skip).limit(limit).all()
+
+def get_all_login_history(db: Session, skip: int = 0, limit: int = 100):
+    """Get all login history entries"""
+    return db.query(models.UserLoginHistory).order_by(
+        models.UserLoginHistory.login_date.desc()
+    ).offset(skip).limit(limit).all()
+
+def get_transaction_history(db: Session, user_id: int = None, chit_no: int = None, skip: int = 0, limit: int = 100):
+    """
+    Get transaction history combining data from chit_users, pay_details, and pay tables
+    
+    Args:
+        db: Database session
+        user_id: Optional filter by user ID
+        chit_no: Optional filter by chit number
+        skip: Number of records to skip for pagination
+        limit: Maximum number of records to return
+        
+    Returns:
+        List of transaction history records
+    """
+    # Start with a query that joins chit_users and pay_details
+    query = db.query(
+        models.Chit_users,
+        models.Pay_details,
+        models.Payment
+    ).join(
+        models.Pay_details,
+        models.Chit_users.chit_id == models.Pay_details.chit_id
+    ).outerjoin(  # Use outer join to include weeks without payments
+        models.Payment,
+        (models.Chit_users.user_id == models.Payment.user_id) &
+        (models.Chit_users.chit_no == models.Payment.chit_no) &
+        (models.Pay_details.week == models.Payment.week_no)
+    )
+    
+    # Apply filters if provided
+    if user_id:
+        query = query.filter(models.Chit_users.user_id == user_id)
+    
+    if chit_no:
+        query = query.filter(models.Chit_users.chit_no == chit_no)
+    
+    # Order by user_id, chit_no, and week for consistent results
+    query = query.order_by(
+        models.Chit_users.user_id,
+        models.Chit_users.chit_no,
+        models.Pay_details.week
+    )
+    
+    # Apply pagination
+    results = query.offset(skip).limit(limit).all()
+    
+    # Convert the results to a list of dictionaries
+    transaction_history = []
+    for chit_user, pay_detail, payment in results:
+        transaction_history.append({
+            "chit_id": chit_user.chit_id,
+            "user_id": chit_user.user_id,
+            "chit_no": chit_user.chit_no,
+            "amount": chit_user.amount,
+            "week": pay_detail.week,
+            "is_paid": pay_detail.is_paid,
+            "payment": payment
+        })
+    
+    return transaction_history

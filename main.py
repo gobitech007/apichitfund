@@ -4,7 +4,7 @@ from fastapi.openapi.utils import get_openapi
 
 from database import engine
 from models import create_tables
-from routes import router, auth_router, users_router, roles_router
+from routes import router, auth_router, users_router, roles_router, login_history_router
 from payments.payments_routes import payments_router
 # from dynamic_tables_routes import dynamic_tables_router
 from middleware import audit_middleware
@@ -60,6 +60,7 @@ api_router.include_router(router)
 api_router.include_router(auth_router)
 api_router.include_router(users_router)
 api_router.include_router(roles_router)
+api_router.include_router(login_history_router)
 api_router.include_router(payments_router)
 # api_router.include_router(dynamic_tables_router)
 
@@ -90,6 +91,10 @@ if __name__ == "__main__":
     print("  GET    /api/roles/{role_id} - Get role by ID")
     print("  PUT    /api/roles/{role_id} - Update role")
     print("  DELETE /api/roles/{role_id} - Delete role")
+    print("Login History endpoints:")
+    print("  GET    /api/login-history/ - List all login history entries")
+    print("  GET    /api/login-history/user/{user_id} - List login history for a specific user")
+    print("  GET    /api/login-history/{user_login_id} - Get login history entry by ID")
     # print("Dynamic Tables endpoints:")
     # print("  POST   /api/tables/     - Create a new table definition")
     # print("  GET    /api/tables/     - List all table definitions")
@@ -105,4 +110,5 @@ if __name__ == "__main__":
     print("  GET    /api/payments/chits/user/{user_id} - List all chits for a specific user")
     print("  POST   /api/payments/chit_users/ - Create a new chit user association")
     print("  PATCH  /api/payments/chits/{user_id} - Update amount for a specific chit")
+    print("  GET    /api/payments/transaction-history/ - Get transaction history with optional user_id and chit_no filters")
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True, log_level="info")
