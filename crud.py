@@ -6,6 +6,8 @@ import models
 import schemas
 import auth
 from payments import payment_schemas
+import random
+import time
 # from audit import add_audit_fields
 
 def get_user(db: Session, user_id: int):
@@ -190,14 +192,14 @@ def get_chits_by_user_id(db: Session, user_id: int, skip: int = 0, limit: int = 
 def get_chit_by_id(db: Session, chit_id: int):
     return db.query(models.Chit_users).filter(models.Chit_users.chit_id == chit_id).first()
 
-def get_chit_by_user_id_and_chit_no(db: Session, user_id: int, chit_no: int):
+def get_chit_by_user_id_and_chit_no(db: Session, user_id: int, amount: int):
     return db.query(models.Chit_users).filter(
         models.Chit_users.user_id == user_id,
-        models.Chit_users.chit_no == chit_no
+        models.Chit_users.amount == amount
     ).first()
 
-def update_chit_amount(db: Session, user_id: int, chit_no: int, base_amount: int, current_user_id: int = None):
-    db_chit = get_chit_by_user_id_and_chit_no(db, user_id=user_id, chit_no=chit_no)
+def update_chit_amount(db: Session, user_id: int, amount: int, base_amount: int, current_user_id: int = None):
+    db_chit = get_chit_by_user_id_and_chit_no(db, user_id=user_id, amount=amount)
     if not db_chit:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -219,7 +221,7 @@ def update_chit_amount(db: Session, user_id: int, chit_no: int, base_amount: int
         
         if "unknown column" in str(e).lower() or "no such column" in str(e).lower():
             # Just update the amount without audit fields
-            db_chit = get_chit_by_user_id_and_chit_no(db, user_id=user_id, chit_no=chit_no)
+            db_chit = get_chit_by_user_id_and_chit_no(db, user_id=user_id, amount=amount)
             db_chit.amount = base_amount
             
             db.commit()
@@ -236,6 +238,14 @@ def create_chit_user(db: Session, chit_user: "payment_schemas.ChitUserCreate", c
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="User not found"
+        )
+    
+    # Check if a chit with the same user_id and chit_no already exists
+    existing_chit = get_chit_by_user_id_and_chit_no(db, user_id=chit_user.user_id, amount=chit_user.amount)
+    if existing_chit:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Chit with amount {chit_user.amount} already exists for user_id {chit_user.user_id}"
         )
 
     # Create new chit_user
@@ -319,7 +329,7 @@ def create_pay_details(db: Session, chit_id: int = None):
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error creating pay details: {str(e)}"
-        )
+        ) from e
     
 def get_pay_details(db: Session, chit_id: int) -> List[models.Pay_details]:
     return db.query(models.Pay_details).filter(models.Pay_details.chit_id == chit_id).all()
@@ -356,10 +366,7 @@ def create_payment(db: Session, payment: "payment_schemas.PaymentCreate", curren
             detail="User not found"
         )
     
-    # Generate a random transaction ID if not provided
-    import random
-    import time
-    
+    # Generate a random transaction ID if not provided    
     # Use the provided transaction_id or generate a new one
     transaction_id = payment.transaction_id
     if not transaction_id:
@@ -381,6 +388,7 @@ def create_payment(db: Session, payment: "payment_schemas.PaymentCreate", curren
             pay_expiry_no=payment.pay_expiry_no,
             pay_qr=payment.pay_qr,
             transaction_id=transaction_id,
+            status="completed",  # Set a default status
             created_by=current_user_id
         )
         
@@ -408,7 +416,7 @@ def create_payment(db: Session, payment: "payment_schemas.PaymentCreate", curren
                 models.Pay_details.week == payment.week_no
             ).first()
             
-            if pay_detail:
+            if pay_detail and pay_detail.is_paid == 'N':
                 pay_detail.is_paid = 'Y'
                 db.commit()
                 db.refresh(pay_detail)
@@ -451,7 +459,7 @@ def create_payment(db: Session, payment: "payment_schemas.PaymentCreate", curren
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error creating payment: {str(e)}"
-        )
+        ) from e
 
 def get_payments(db: Session, skip: int = 0, limit: int = 100):
     """Get all payments"""
@@ -591,49 +599,78 @@ def get_transaction_history(db: Session, user_id: int = None, chit_no: int = Non
     Returns:
         List of transaction history records
     """
-    # Start with a query that joins chit_users and pay_details
-    query = db.query(
-        models.Chit_users,
-        models.Pay_details,
-        models.Payment
-    ).join(
-        models.Pay_details,
-        models.Chit_users.chit_id == models.Pay_details.chit_id
-    ).outerjoin(  # Use outer join to include weeks without payments
-        models.Payment,
-        (models.Chit_users.user_id == models.Payment.user_id) &
-        (models.Chit_users.chit_no == models.Payment.chit_no) &
-        (models.Pay_details.week == models.Payment.week_no)
-    )
-    
-    # Apply filters if provided
-    if user_id:
-        query = query.filter(models.Chit_users.user_id == user_id)
-    
-    if chit_no:
-        query = query.filter(models.Chit_users.chit_no == chit_no)
-    
-    # Order by user_id, chit_no, and week for consistent results
-    query = query.order_by(
-        models.Chit_users.user_id,
-        models.Chit_users.chit_no,
-        models.Pay_details.week
-    )
-    
-    # Apply pagination
-    results = query.offset(skip).limit(limit).all()
-    
-    # Convert the results to a list of dictionaries
-    transaction_history = []
-    for chit_user, pay_detail, payment in results:
-        transaction_history.append({
-            "chit_id": chit_user.chit_id,
-            "user_id": chit_user.user_id,
-            "chit_no": chit_user.chit_no,
-            "amount": chit_user.amount,
-            "week": pay_detail.week,
-            "is_paid": pay_detail.is_paid,
-            "payment": payment
-        })
-    
-    return transaction_history
+    try:
+        # Start with a query that joins chit_users and pay_details
+        query = db.query(
+            models.Chit_users,
+            models.Pay_details,
+            models.Payment
+        ).join(
+            models.Pay_details,
+            models.Chit_users.chit_id == models.Pay_details.chit_id
+        ).outerjoin(  # Use outer join to include weeks without payments
+            models.Payment,
+            (models.Chit_users.user_id == models.Payment.user_id) &
+            (models.Chit_users.chit_no == models.Payment.chit_no) &
+            (models.Pay_details.week == models.Payment.week_no)
+        )
+        
+        # Apply filters if provided
+        if user_id:
+            query = query.filter(models.Chit_users.user_id == user_id)
+        
+        if chit_no:
+            query = query.filter(models.Chit_users.chit_no == chit_no)
+        
+        # Order by user_id, chit_no, and week for consistent results
+        query = query.order_by(
+            models.Chit_users.user_id,
+            models.Chit_users.chit_no,
+            models.Pay_details.week
+        )
+        
+        # Apply pagination
+        results = query.offset(skip).limit(limit).all()
+        
+        # Convert the results to a list of dictionaries
+        transaction_history = []
+        for row in results:
+            chit_user, pay_detail, payment = row
+            
+            # Create a dictionary for this transaction
+            transaction = {
+                "chit_id": chit_user.chit_id,
+                "user_id": chit_user.user_id,
+                "chit_no": chit_user.chit_no,
+                "amount": chit_user.amount,
+                "week": pay_detail.week,
+                "is_paid": pay_detail.is_paid,
+                "payment": None
+            }
+            
+            # Only include payment if it exists
+            if payment:
+                transaction["payment"] = {
+                    "pay_id": payment.pay_id,
+                    "user_id": payment.user_id,
+                    "chit_no": payment.chit_no,
+                    "amount": payment.amount,
+                    "week_no": payment.week_no,
+                    "pay_type": payment.pay_type,
+                    "pay_card": payment.pay_card,
+                    "pay_card_name": payment.pay_card_name,
+                    "pay_expiry_no": payment.pay_expiry_no,
+                    "pay_qr": payment.pay_qr,
+                    "transaction_id": payment.transaction_id,
+                    "status": payment.status,
+                    "created_at": payment.created_at.isoformat() if payment.created_at else None
+                }
+            
+            transaction_history.append(transaction)
+        
+        return transaction_history
+    except Exception as e:
+        # Log the error for debugging
+        print(f"Error in get_transaction_history: {str(e)}")
+        # Re-raise the exception to be handled by the API endpoint
+        raise

@@ -220,19 +220,28 @@ def get_transaction_history(
     
     You can filter by user_id and/or chit_no.
     """
-    # If user_id is provided, check if user exists
-    if user_id:
-        db_user = crud.get_user(db, user_id=user_id)
-        if db_user is None:
-            raise HTTPException(status_code=404, detail="User not found")
-    
-    # Get transaction history
-    transactions = crud.get_transaction_history(
-        db=db, 
-        user_id=user_id, 
-        chit_no=chit_no, 
-        skip=skip, 
-        limit=limit
-    )
-    
-    return transactions
+    try:
+        # If user_id is provided, check if user exists
+        if user_id:
+            db_user = crud.get_user(db, user_id=user_id)
+            if db_user is None:
+                raise HTTPException(status_code=404, detail="User not found")
+        
+        # Get transaction history
+        transactions = crud.get_transaction_history(
+            db=db, 
+            user_id=user_id, 
+            chit_no=chit_no, 
+            skip=skip, 
+            limit=limit
+        )
+        
+        return transactions
+    except Exception as e:
+        # Log the error
+        print(f"Error in get_transaction_history endpoint: {str(e)}")
+        # Return a more helpful error message
+        raise HTTPException(
+            status_code=500,
+            detail=f"An error occurred while retrieving transaction history: {str(e)}"
+        )
