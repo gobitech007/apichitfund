@@ -42,9 +42,9 @@ def get_user_chits(user_id: int, skip: int = 0, limit: int = 100, db: Session = 
 def create_chit_user(chit_user: payment_schemas.ChitUserCreate, request: Request, db: Session = Depends(get_db), current_user_id: Optional[int] = Depends(get_current_user_id)):
     return crud.create_chit_user(db=db, chit_user=chit_user, current_user_id=current_user_id)
 
-@payments_router.patch("/chits/user/{user_id}/chit/{chit_no}", response_model=payment_schemas.ChitUserResponse)
-def update_chit_amount(user_id: int, chit_no: int, chit_update: payment_schemas.ChitUserUpdate, request: Request, db: Session = Depends(get_db), current_user_id: Optional[int] = Depends(get_current_user_id)):
-    return crud.update_chit_amount(db=db, user_id=user_id, chit_no=chit_no, base_amount=chit_update.amount, current_user_id=current_user_id)
+@payments_router.patch("/chits/user/{user_id}/chit/{amount}", response_model=payment_schemas.ChitUserResponse)
+def update_chit_amount(user_id: int, amount: int, chit_update: payment_schemas.ChitUserUpdate, request: Request, db: Session = Depends(get_db), current_user_id: Optional[int] = Depends(get_current_user_id)):
+    return crud.update_chit_amount(db=db, user_id=user_id, amount=amount, base_amount=chit_update.amount, current_user_id=current_user_id)
 
 # Add these new endpoints to your existing payments_router
 
