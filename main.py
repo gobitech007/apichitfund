@@ -6,6 +6,7 @@ from database import engine
 from models import create_tables
 from routes import router, auth_router, users_router, roles_router, login_history_router
 from payments.payments_routes import payments_router
+from interest.interest_routes import router as interest_router
 # from dynamic_tables_routes import dynamic_tables_router
 from middleware import audit_middleware
 from migrations import run_migrations
@@ -62,6 +63,7 @@ api_router.include_router(users_router)
 api_router.include_router(roles_router)
 api_router.include_router(login_history_router)
 api_router.include_router(payments_router)
+api_router.include_router(interest_router)
 # api_router.include_router(dynamic_tables_router)
 
 # Include the API router in the main app

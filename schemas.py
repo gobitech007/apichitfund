@@ -17,8 +17,8 @@ class UserBase(BaseModel):
             date: lambda v: v.isoformat(),
         }
         
-    @validator('dob', pre=True)
-    def parse_dob(cls, value):
+    # @validator('dob', pre=True)
+    def parse_dob(self, value):
         if isinstance(value, str):
             try:
                 return date.fromisoformat(value)
@@ -180,6 +180,34 @@ class UserLoginHistoryCreate(UserLoginHistoryBase):
 class UserLoginHistory(UserLoginHistoryBase):
     user_login_id: int
     login_date: datetime
+
+    class Config:
+        from_attributes = True
+
+# Interest Tracking schemas
+class InterestTrackingBase(BaseModel):
+    user_id: int
+    chit_id: int
+    chit_no: int
+    month: int
+    year: int
+    weeks_paid: int
+    total_amount: int
+    interest_rate: int = 1  # Default to 1%
+    interest_amount: int
+
+class InterestTrackingCreate(InterestTrackingBase):
+    pass
+
+class InterestTrackingUpdate(BaseModel):
+    is_paid: Optional[bool] = None
+    paid_at: Optional[datetime] = None
+
+class InterestTracking(InterestTrackingBase):
+    interest_id: int
+    calculated_at: datetime
+    is_paid: bool
+    paid_at: Optional[datetime] = None
 
     class Config:
         from_attributes = True

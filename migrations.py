@@ -34,9 +34,52 @@ def column_exists(table, column):
         return False
 
 
+def table_exists(table):
+    """Check if a table exists in the database"""
+    try:
+        result = engine.execute(f"""
+            SELECT COUNT(*) 
+            FROM information_schema.TABLES 
+            WHERE TABLE_SCHEMA = DATABASE() 
+            AND TABLE_NAME = '{table}'
+        """)
+        return result.scalar() > 0
+    except Exception:
+        return False
+
 def run_migrations():
     """Run database migrations to add audit fields to existing tables"""
     print("Running database migrations...")
+    
+    # Check if interest_tracking table exists, if not, run the SQL script
+    if not table_exists('interest_tracking'):
+        try:
+            print("Creating interest_tracking table and stored procedures...")
+            # Read the SQL script
+            with open('interest_table_and_procedure.sql', 'r') as file:
+                sql_script = file.read()
+            
+            # Split the script by delimiter
+            statements = sql_script.split('DELIMITER //')
+            
+            # Execute the first part (table creation)
+            if len(statements) > 0:
+                execute_safe(statements[0], "Creating interest_tracking table")
+            
+            # Execute stored procedures
+            if len(statements) > 1:
+                for i in range(1, len(statements)):
+                    # Split by DELIMITER ;
+                    proc_parts = statements[i].split('DELIMITER ;')
+                    if len(proc_parts) > 0:
+                        # Extract the procedure definition
+                        proc_def = proc_parts[0].strip()
+                        if proc_def:
+                            execute_safe(proc_def, f"Creating stored procedure {i}")
+            
+            print("Interest tracking table and stored procedures created successfully!")
+        except Exception as e:
+            print(f"Error creating interest tracking table: {e}")
     
     # Add created_at column to users table if it doesn't exist
     if not column_exists('users', 'created_at'):

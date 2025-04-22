@@ -190,3 +190,24 @@ class UserLoginHistory(Base):
     user = relationship("User", foreign_keys=[user_id])
  
 
+class InterestTracking(Base):
+    __tablename__ = "interest_tracking"
+    
+    interest_id = Column(Integer, primary_key=True, nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey("users.user_id", name="fk_interest_user_id", use_alter=True))
+    chit_id = Column(Integer, ForeignKey("chit_users.chit_id", name="fk_interest_chit_id", use_alter=True))
+    chit_no = Column(Integer, nullable=False)
+    month = Column(Integer, nullable=False)
+    year = Column(Integer, nullable=False)
+    weeks_paid = Column(Integer, nullable=False)
+    total_amount = Column(Integer, nullable=False)
+    interest_rate = Column(Integer, nullable=False, default=1)  # Stored as percentage (1 = 1%)
+    interest_amount = Column(Integer, nullable=False)
+    calculated_at = Column(DateTime, server_default=func.now())
+    is_paid = Column(Boolean, default=False)
+    paid_at = Column(DateTime, nullable=True)
+    
+    # Relationships
+    user = relationship("User", foreign_keys=[user_id])
+    chit = relationship("Chit_users", foreign_keys=[chit_id])
+
