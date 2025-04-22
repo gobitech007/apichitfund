@@ -3,6 +3,13 @@ from datetime import date, datetime
 from typing import Optional, List, Dict, Any, Union
 from enum import Enum
 
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+
+class TokenData(BaseModel):
+    email: Optional[str] = None
+
 class UserBase(BaseModel):
     fullname: str
     email: EmailStr
