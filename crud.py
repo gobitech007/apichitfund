@@ -245,7 +245,7 @@ def create_chit_user(db: Session, chit_user: "payment_schemas.ChitUserCreate", c
     if existing_chit:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Chit with amount {chit_user.amount} already exists for user_id {chit_user.user_id}"
+            detail=f"Chit with amount {chit_user.amount} already exists for {db_user.fullname}"
         )
 
     # Create new chit_user
