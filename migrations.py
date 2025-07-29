@@ -8,7 +8,9 @@ def execute_safe(query, description):
     """Execute a query safely, handling errors"""
     try:
         print(f"Executing: {description}...")
-        engine.execute(query)
+        with engine.connect() as connection:
+            connection.execute(text(query))
+            connection.commit()
         print(f"Successfully executed: {description}")
         return True
     except Exception as e:
@@ -22,14 +24,15 @@ def execute_safe(query, description):
 def column_exists(table, column):
     """Check if a column exists in a table"""
     try:
-        result = engine.execute(f"""
-            SELECT COUNT(*) 
-            FROM information_schema.COLUMNS 
-            WHERE TABLE_SCHEMA = DATABASE() 
-            AND TABLE_NAME = '{table}' 
-            AND COLUMN_NAME = '{column}'
-        """)
-        return result.scalar() > 0
+        with engine.connect() as connection:
+            result = connection.execute(text(f"""
+                SELECT COUNT(*) 
+                FROM information_schema.COLUMNS 
+                WHERE TABLE_SCHEMA = DATABASE() 
+                AND TABLE_NAME = '{table}' 
+                AND COLUMN_NAME = '{column}'
+            """))
+            return result.scalar() > 0
     except Exception:
         return False
 
@@ -37,13 +40,14 @@ def column_exists(table, column):
 def table_exists(table):
     """Check if a table exists in the database"""
     try:
-        result = engine.execute(f"""
-            SELECT COUNT(*) 
-            FROM information_schema.TABLES 
-            WHERE TABLE_SCHEMA = DATABASE() 
-            AND TABLE_NAME = '{table}'
-        """)
-        return result.scalar() > 0
+        with engine.connect() as connection:
+            result = connection.execute(text(f"""
+                SELECT COUNT(*) 
+                FROM information_schema.TABLES 
+                WHERE TABLE_SCHEMA = DATABASE() 
+                AND TABLE_NAME = '{table}'
+            """))
+            return result.scalar() > 0
     except Exception:
         return False
 
@@ -148,14 +152,15 @@ def run_migrations():
     # Add foreign key to user_id in chit_users table if it doesn't exist
     try:
         print("Checking foreign key for user_id in chit_users table...")
-        result = engine.execute("""
-            SELECT COUNT(*) 
-            FROM information_schema.KEY_COLUMN_USAGE 
-            WHERE TABLE_SCHEMA = DATABASE() 
-            AND TABLE_NAME = 'chit_users' 
-            AND COLUMN_NAME = 'user_id' 
-            AND REFERENCED_TABLE_NAME = 'users'
-        """)
+        with engine.connect() as connection:
+            result = connection.execute(text("""
+                SELECT COUNT(*) 
+                FROM information_schema.KEY_COLUMN_USAGE 
+                WHERE TABLE_SCHEMA = DATABASE() 
+                AND TABLE_NAME = 'chit_users' 
+                AND COLUMN_NAME = 'user_id' 
+                AND REFERENCED_TABLE_NAME = 'users'
+            """))
         count = result.scalar()
         
         if count == 0:
@@ -168,6 +173,26 @@ def run_migrations():
             print("Foreign key already exists for user_id in chit_users table")
     except Exception as e:
         print(f"Error checking foreign key for user_id in chit_users table: {e}")
+    
+    # Make email column nullable in users table
+    try:
+        print("Making email column nullable in users table...")
+        execute_safe("""
+            ALTER TABLE users 
+            MODIFY COLUMN email VARCHAR(100) NULL
+        """, "Making email column nullable in users table")
+    except Exception as e:
+        print(f"Error making email column nullable: {e}")
+    
+    # Make aadhar column nullable in users table
+    try:
+        print("Making aadhar column nullable in users table...")
+        execute_safe("""
+            ALTER TABLE users 
+            MODIFY COLUMN aadhar VARCHAR(20) NULL
+        """, "Making aadhar column nullable in users table")
+    except Exception as e:
+        print(f"Error making aadhar column nullable: {e}")
     
     print("Database migrations completed")
 

@@ -51,8 +51,7 @@ class PayDetailCreate(PayDetailBase):
     pass
 
 class PayDetailResponse(PayDetailBase):
-    details_id: int
-    
+    updated_at: datetime
     class Config:
         from_attributes = True
 

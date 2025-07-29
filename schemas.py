@@ -12,9 +12,9 @@ class TokenData(BaseModel):
 
 class UserBase(BaseModel):
     fullname: str
-    email: EmailStr
-    phone: str
-    aadhar: str
+    email: Optional[EmailStr] = None  # Made optional
+    phone: str  # Mandatory
+    aadhar: Optional[str] = None  # Made optional
     dob: date
     pin: int
     role: Optional[str] = None
