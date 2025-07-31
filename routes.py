@@ -136,7 +136,7 @@ async def login(login_data: schemas.UserLogin, request: Request, db: Session = D
     access_token = create_access_token(
         data={"sub": user.email}, expires_delta=access_token_expires
     )
-    return {"access_token": access_token, "token_type": "bearer"}
+    return {"access_token": access_token, "token_type": "bearer", "user_id": user.user_id}
 
 @auth_router.get("/me", response_model=schemas.User)
 async def read_users_me(current_user = Depends(get_current_user)):
