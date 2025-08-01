@@ -11,7 +11,7 @@ class User(Base):
     fullname = Column(String(100), nullable=False, index=True)
     email = Column(String(100), nullable=True, unique=True, index=True)  # Made optional
     phone = Column(String(20), nullable=False, unique=True, index=True)  # Mandatory
-    aadhar = Column(String(20), nullable=True, unique=True, index=True)  # Made optional
+    aadhar = Column(String(20), nullable=True, unique=False, index=False)  # Made optional
     dob = Column(Date, nullable=False)
     password = Column(String(100), nullable=False)
     pin = Column(Integer, nullable=True)

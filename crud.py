@@ -29,18 +29,18 @@ def get_users(db: Session, skip: int = 0, limit: int = 100):
 
 def create_user(db: Session, user: schemas.UserCreate, current_user_id: int = None):
     # Check if user with same email exists (only if email is provided)
-    if user.email and get_user_by_email(db, email=user.email):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Email already registered"
-        )
+    # if user.email and get_user_by_email(db, email=user.email):
+    #     raise HTTPException(
+    #         status_code=status.HTTP_400_BAD_REQUEST,
+    #         detail="Email already registered"
+    #     )
 
     # Check if user with same aadhar exists (only if aadhar is provided)
-    if user.aadhar and get_user_by_aadhar(db, aadhar=user.aadhar):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Aadhar already registered"
-        )
+    # if user.aadhar and get_user_by_aadhar(db, aadhar=user.aadhar):
+    #     raise HTTPException(
+    #         status_code=status.HTTP_400_BAD_REQUEST,
+    #         detail="Aadhar already registered"
+    #     )
 
     # Check if user with same phone exists (phone is mandatory)
     if get_user_by_phone(db, phone=user.phone):
