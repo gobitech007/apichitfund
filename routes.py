@@ -25,6 +25,15 @@ router = APIRouter()
 def read_root():
     return {"message": "Welcome to MyChitFund API"}
 
+@router.get("/health")
+def health_check():
+    """Health check endpoint for monitoring and connectivity tests"""
+    return {
+        "status": "healthy",
+        "message": "API server is running",
+        "version": "1.0.0"
+    }
+
 # Authentication router
 auth_router = APIRouter(prefix="/auth", tags=["Authentication"])
 
