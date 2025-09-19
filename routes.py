@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, Request
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from datetime import timedelta
-from typing import Optional
+from typing import Optional, List
 from jose import JWTError, jwt
 
 import crud
@@ -306,7 +306,7 @@ async def logout(request: Request):
 # Users router
 users_router = APIRouter(prefix="/users", tags=["Users"])
 
-@users_router.get("/", response_model=list[schemas.User])
+@users_router.get("/", response_model=List[schemas.User])
 def read_users(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     users = crud.get_users(db, skip=skip, limit=limit)
     return users
@@ -348,12 +348,12 @@ def delete_user(user_id: int, db: Session = Depends(get_db)):
 # Login History router
 login_history_router = APIRouter(prefix="/login-history", tags=["Login History"])
 
-@login_history_router.get("/", response_model=list[schemas.UserLoginHistory])
+@login_history_router.get("/", response_model=List[schemas.UserLoginHistory])
 def read_all_login_history(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     """Get all login history entries"""
     return crud.get_all_login_history(db, skip=skip, limit=limit)
 
-@login_history_router.get("/user/{user_id}", response_model=list[schemas.UserLoginHistory])
+@login_history_router.get("/user/{user_id}", response_model=List[schemas.UserLoginHistory])
 def read_user_login_history(user_id: int, skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     """Get login history for a specific user"""
     return crud.get_user_login_history(db, user_id=user_id, skip=skip, limit=limit)
@@ -369,7 +369,7 @@ def read_login_history(user_login_id: int, db: Session = Depends(get_db)):
 # Roles router
 roles_router = APIRouter(prefix="/roles", tags=["Roles"])
 
-@roles_router.get("/", response_model=list[schemas.Role])
+@roles_router.get("/", response_model=List[schemas.Role])
 def read_roles(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     """Get all roles"""
     roles = crud.get_roles(db, skip=skip, limit=limit)
@@ -397,3 +397,12 @@ def update_role(role_id: int, role: schemas.RoleUpdate, db: Session = Depends(ge
 def delete_role(role_id: int, db: Session = Depends(get_db)):
     """Delete a role"""
     return crud.delete_role(db=db, role_id=role_id)
+
+
+# Chits users router
+chits_router = APIRouter(prefix="/chits", tags=["Chits"])
+
+@chits_router.get("/", response_model=List[schemas.ChitUsers])
+def chits_users(skip: int = 0, limit: int = 100, db: Session = Depends(get_db), current_user_id: Optional[int] = Depends(get_current_user_id)):
+    chit_users = crud.get_chits_users(db, skip=skip, limit=limit, current_user_id=current_user_id)
+    return chit_users

@@ -259,3 +259,13 @@ class InterestTracking(InterestTrackingBase):
 
     class Config:
         from_attributes = True
+
+class ChitUsers(BaseModel):
+    """Chit User model with database ID."""
+    chit_id: int
+    user_id: int
+    chit_no: int
+    amount: int
+
+    class Config:
+        from_attributes = True  

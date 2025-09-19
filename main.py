@@ -4,7 +4,7 @@ from fastapi.openapi.utils import get_openapi
 
 from database import engine
 from models import create_tables
-from routes import router, auth_router, users_router, roles_router, login_history_router
+from routes import router, auth_router, users_router, roles_router, login_history_router, chits_router
 from payments.payments_routes import payments_router
 from interest.interest_routes import router as interest_router
 # from dynamic_tables_routes import dynamic_tables_router
@@ -60,6 +60,7 @@ api_router = APIRouter(prefix="/api")
 api_router.include_router(router)
 api_router.include_router(auth_router)
 api_router.include_router(users_router)
+api_router.include_router(chits_router)
 api_router.include_router(roles_router)
 api_router.include_router(login_history_router)
 api_router.include_router(payments_router)
@@ -97,6 +98,7 @@ if __name__ == "__main__":
     print("  GET    /api/login-history/ - List all login history entries")
     print("  GET    /api/login-history/user/{user_id} - List login history for a specific user")
     print("  GET    /api/login-history/{user_login_id} - Get login history entry by ID")
+    print(" GET /api/chits/ - List all chits")
     # print("Dynamic Tables endpoints:")
     # print("  POST   /api/tables/     - Create a new table definition")
     # print("  GET    /api/tables/     - List all table definitions")

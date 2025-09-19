@@ -31,8 +31,8 @@ pipeline {
     }
     
     tools {
-        // Ensure Python is available
-        python 'Python-3.11'
+        // Git tool for source code management
+        git 'Default'
     }
     
     stages {
@@ -53,25 +53,52 @@ pipeline {
         stage('Setup Environment') {
             steps {
                 echo 'Setting up Python environment...'
-                sh '''
-                    # Create virtual environment
-                    python3 -m venv venv
+                script {
+                    // Check Python availability and version
+                    sh '''
+                        echo "Checking Python installation..."
+                        python3 --version || python --version
+                        which python3 || which python
+                        
+                        echo "Checking pip installation..."
+                        python3 -m pip --version || python -m pip --version
+                    '''
                     
-                    # Activate virtual environment and install dependencies
-                    . venv/bin/activate
-                    
-                    # Upgrade pip
-                    pip install --upgrade pip
-                    
-                    # Install dependencies
-                    pip install -r requirements.txt
-                    
-                    # Install development dependencies
-                    pip install pytest pytest-cov pytest-asyncio httpx flake8 black isort mypy bandit safety
-                    
-                    # Display installed packages
-                    pip list
-                '''
+                    // Setup virtual environment and dependencies
+                    sh '''
+                        # Remove existing virtual environment if it exists
+                        rm -rf venv || true
+                        
+                        # Create virtual environment (try python3 first, then python)
+                        if command -v python3 &> /dev/null; then
+                            python3 -m venv venv
+                        elif command -v python &> /dev/null; then
+                            python -m venv venv
+                        else
+                            echo "Error: Python not found!"
+                            exit 1
+                        fi
+                        
+                        # Activate virtual environment and install dependencies
+                        . venv/bin/activate
+                        
+                        # Verify virtual environment activation
+                        which python
+                        python --version
+                        
+                        # Upgrade pip
+                        python -m pip install --upgrade pip
+                        
+                        # Install dependencies
+                        pip install -r requirements.txt
+                        
+                        # Install development dependencies
+                        pip install pytest pytest-cov pytest-asyncio httpx flake8 black isort mypy bandit safety
+                        
+                        # Display installed packages
+                        pip list
+                    '''
+                }
             }
         }
         
@@ -489,56 +516,82 @@ except Exception as e:
     
     post {
         always {
-            echo 'Cleaning up...'
-            
-            // Clean up workspace
-            sh '''
-                # Remove virtual environment
-                rm -rf venv
+            script {
+                echo 'Cleaning up...'
                 
-                # Clean up Docker images (keep last 3 builds)
-                docker image prune -f
-            '''
-            
-            // Archive artifacts
-            archiveArtifacts artifacts: '**/*.log', allowEmptyArchive: true
+                // Clean up workspace
+                try {
+                    sh '''
+                        # Remove virtual environment
+                        rm -rf venv || true
+                        
+                        # Clean up Docker images (keep last 3 builds)
+                        docker image prune -f || true
+                    '''
+                } catch (Exception e) {
+                    echo "Cleanup failed: ${e.getMessage()}"
+                }
+                
+                // Archive artifacts
+                try {
+                    archiveArtifacts artifacts: '**/*.log', allowEmptyArchive: true
+                } catch (Exception e) {
+                    echo "Artifact archiving failed: ${e.getMessage()}"
+                }
+            }
         }
         
         success {
-            echo 'Pipeline completed successfully!'
-            
-            // Send success notification
             script {
-                if (env.BRANCH_NAME == 'main') {
-                    slackSend(
-                        channel: '#deployments',
-                        color: 'good',
-                        message: "✅ ${APP_NAME} successfully deployed to production! Build: ${BUILD_NUMBER}"
-                    )
+                echo 'Pipeline completed successfully!'
+                
+                // Send success notification
+                try {
+                    if (env.BRANCH_NAME == 'main') {
+                        slackSend(
+                            channel: '#deployments',
+                            color: 'good',
+                            message: "✅ ${APP_NAME} successfully deployed to production! Build: ${BUILD_NUMBER}"
+                        )
+                    }
+                } catch (Exception e) {
+                    echo "Slack notification failed: ${e.getMessage()}"
                 }
             }
         }
         
         failure {
-            echo 'Pipeline failed!'
-            
-            // Send failure notification
-            slackSend(
-                channel: '#alerts',
-                color: 'danger',
-                message: "❌ ${APP_NAME} pipeline failed! Build: ${BUILD_NUMBER} Branch: ${env.BRANCH_NAME ?: 'main'}"
-            )
+            script {
+                echo 'Pipeline failed!'
+                
+                // Send failure notification
+                try {
+                    slackSend(
+                        channel: '#alerts',
+                        color: 'danger',
+                        message: "❌ ${APP_NAME} pipeline failed! Build: ${BUILD_NUMBER} Branch: ${env.BRANCH_NAME ?: 'main'}"
+                    )
+                } catch (Exception e) {
+                    echo "Slack notification failed: ${e.getMessage()}"
+                }
+            }
         }
         
         unstable {
-            echo 'Pipeline completed with warnings!'
-            
-            // Send warning notification
-            slackSend(
-                channel: '#alerts',
-                color: 'warning',
-                message: "⚠️ ${APP_NAME} pipeline completed with warnings! Build: ${BUILD_NUMBER}"
-            )
+            script {
+                echo 'Pipeline completed with warnings!'
+                
+                // Send warning notification
+                try {
+                    slackSend(
+                        channel: '#alerts',
+                        color: 'warning',
+                        message: "⚠️ ${APP_NAME} pipeline completed with warnings! Build: ${BUILD_NUMBER}"
+                    )
+                } catch (Exception e) {
+                    echo "Slack notification failed: ${e.getMessage()}"
+                }
+            }
         }
     }
 }

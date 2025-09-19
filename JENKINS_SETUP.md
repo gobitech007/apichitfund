@@ -284,14 +284,42 @@ The application includes built-in health checks:
 
 ### Common Issues
 
-#### 1. Python Environment Issues
+#### 1. Invalid Python Tool Type Error
+**Error**: `Invalid tool type "python". Valid tool types: [ant, git, maven, ...]`
+
+**Solution**: The Python tool plugin is not installed or configured. Use one of these approaches:
+
+**Option A**: Install Python Plugin
 ```bash
-# Solution: Ensure Python 3.11 is available
-python3 --version
-pip3 --version
+# Install the Python Plugin in Jenkins
+# Go to Manage Jenkins > Manage Plugins > Available
+# Search for "Python Plugin" and install it
 ```
 
-#### 2. Docker Build Failures
+**Option B**: Use the simplified Jenkinsfile
+```bash
+# Use Jenkinsfile.simple instead of Jenkinsfile
+# This version doesn't require the Python tool plugin
+cp Jenkinsfile.simple Jenkinsfile
+```
+
+**Option C**: Remove tools section and handle Python manually
+```groovy
+// Remove the tools section and handle Python in shell commands
+// The updated Jenkinsfile already handles this
+```
+
+#### 2. Python Environment Issues
+```bash
+# Solution: Ensure Python 3.11+ is available
+python3 --version
+pip3 --version
+
+# If python3 is not available, try python
+python --version
+```
+
+#### 3. Docker Build Failures
 ```bash
 # Check Docker daemon
 docker info
@@ -300,16 +328,37 @@ docker info
 docker system prune -f
 ```
 
-#### 3. Database Connection Issues
+#### 4. Database Connection Issues
 ```bash
 # Test database connectivity
 mysql -h $DB_HOST -P $DB_PORT -u $DB_USER -p$DB_PASSWORD -e "SELECT 1"
 ```
 
-#### 4. SonarQube Connection Issues
+#### 5. SonarQube Connection Issues
 ```bash
 # Test SonarQube connectivity
 curl -u $SONAR_TOKEN: http://sonarqube-server:9000/api/system/status
+```
+
+#### 6. Missing Context Variable Error
+**Error**: `Required context class hudson.FilePath is missing`
+
+**Solution**: This occurs when `sh` steps are used in `post` sections without proper context.
+
+**Fix Applied**: All `sh` steps in `post` sections are now wrapped in `script` blocks with try-catch error handling.
+
+```groovy
+post {
+    always {
+        script {
+            try {
+                sh 'cleanup commands'
+            } catch (Exception e) {
+                echo "Cleanup failed: ${e.getMessage()}"
+            }
+        }
+    }
+}
 ```
 
 ### Pipeline Debugging

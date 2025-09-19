@@ -674,3 +674,6 @@ def get_transaction_history(db: Session, user_id: int = None, chit_no: int = Non
         print(f"Error in get_transaction_history: {str(e)}")
         # Re-raise the exception to be handled by the API endpoint
         raise
+# Chit Users schemas
+def get_chits_users(db: Session, skip: int = 0, limit: int = 100, current_user_id: int = None):
+    return db.query(models.Chit_users).filter(models.Chit_users.user_id == current_user_id).offset(skip).limit(limit).all()
