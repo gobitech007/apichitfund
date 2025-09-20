@@ -4,14 +4,31 @@ FROM python:3.11-slim
 # Set working directory
 WORKDIR /app
 
-# Copy requirements file if exists
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    gcc \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy requirements file
 COPY requirements.txt ./
 
-# Install dependencies if requirements.txt is present
-RUN if [ -f requirements.txt ]; then pip install --no-cache-dir -r requirements.txt; fi
+# Install Python dependencies
+RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application code
 COPY . .
 
-# Default command to run your app (replace app.py with your entrypoint)
-CMD ["python", "app.py"]
+# Create non-root user for security
+RUN useradd --create-home --shell /bin/bash app \
+    && chown -R app:app /app
+USER app
+
+# Expose port
+EXPOSE 8000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:8000/health || exit 1
+
+# Production command with Gunicorn
+CMD ["gunicorn", "app:app", "-c", "gunicorn.conf.py"]

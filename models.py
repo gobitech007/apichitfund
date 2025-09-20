@@ -156,8 +156,8 @@ class Payment(Base):
     status = Column(String(20), nullable=False)  # completed/pending/failure
     created_at = Column(DateTime, server_default=func.now()) # pylint: disable=E1102
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now()) # pylint: disable=E1102
-    created_by = Column(String(100), ForeignKey("users.fullname", ondelete="SET NULL", name="fk_payments_created_by", use_alter=True), nullable=True)
-    updated_by = Column(String(100), ForeignKey("users.fullname", ondelete="SET NULL", name="fk_payments_updated_by", use_alter=True), nullable=True)
+    created_by = Column(Integer, ForeignKey("users.user_id", ondelete="SET NULL", name="fk_payments_created_by", use_alter=True), nullable=True)
+    updated_by = Column(Integer, ForeignKey("users.user_id", ondelete="SET NULL", name="fk_payments_updated_by", use_alter=True), nullable=True)
     
     # Relationships
     user = relationship("User", foreign_keys=[user_id])

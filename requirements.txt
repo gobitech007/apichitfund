@@ -9,5 +9,8 @@ passlib[bcrypt]>=1.7.4
 pymysql>=1.0.0
 python-multipart>=0.0.5
 
+# Production server
+gunicorn>=21.2.0
+
 # Optional debugging tools
 # debugpy>=1.6.0  # Uncomment to install debugpy for VS Code debugging
