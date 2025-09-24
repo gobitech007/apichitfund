@@ -7,7 +7,7 @@ def apply_sql_script():
     """
     # Database connection parameters
     db_params = {
-        'host': '127.0.0.1',
+        'host': '192.168.29.95',
         'port': 3306,
         'user': 'root',
         'password': 'admin',
