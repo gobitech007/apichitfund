@@ -78,6 +78,10 @@ Thumbs.db
 Jenkinsfile
 .jenkins/
 
+# Docker Compose (prevent confusion with Dockerfile)
+docker-compose.yml
+docker-compose.*.yml
+
 # Security reports
 bandit-report.json
 safety-report.json
