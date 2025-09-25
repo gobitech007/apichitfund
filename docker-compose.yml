@@ -11,7 +11,7 @@ services:
       - "8000:8000"
     environment:
       - ENVIRONMENT=development
-      - DATABASE_URL=mysql://root:admin@db:3306/mychitfund
+      - DATABASE_URL=mysql://root:admin@host.docker.internal:3306/mychitfund
     depends_on:
       - db
       - redis
