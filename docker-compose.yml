@@ -11,7 +11,7 @@ services:
       - "8000:8000"
     environment:
       - ENVIRONMENT=development
-      - DATABASE_URL=mysql://root:admin@host.docker.internal:3306/mychitfund
+      - DATABASE_URL=mysql+pymysql://root:admin@host.docker.internal:3306/mychitfund
     depends_on:
       - db
       - redis
@@ -30,7 +30,7 @@ services:
   # MySQL Database
   db:
     image: mysql:8.0
-    container_name: python
+    container_name: smchitfund-mysql
     environment:
       - MYSQL_ROOT_PASSWORD=root_password
       - MYSQL_DATABASE=mydatabase
@@ -62,7 +62,7 @@ services:
   # Nginx Reverse Proxy
   nginx:
     image: nginx:alpine
-    container_name: python-nginx
+    container_name: smchitfund-nginx
     ports:
       - "80:80"
       - "443:443"
