@@ -1,5 +1,4 @@
 version: '3.8'
-
 services:
   # FastAPI Application
   api:
@@ -11,7 +10,7 @@ services:
       - "8000:8000"
     environment:
       - ENVIRONMENT=development
-      - DATABASE_URL=mysql+pymysql://root:admin@host.docker.internal:3306/mychitfund
+      - DATABASE_URL=mysql+pymysql://root:admin@db:3306/mychitfund
     depends_on:
       - db
       - redis
@@ -32,12 +31,12 @@ services:
     image: mysql:8.0
     container_name: smchitfund-mysql
     environment:
-      - MYSQL_ROOT_PASSWORD=root_password
-      - MYSQL_DATABASE=mydatabase
-      - MYSQL_USER=user
-      - MYSQL_PASSWORD=password
+      - MYSQL_ROOT_PASSWORD=admin
+      - MYSQL_DATABASE=mychitfund
+      - MYSQL_USER=mychit
+      - MYSQL_PASSWORD=admin
     ports:
-      - "3306:3306"
+      - "3307:3306"
     volumes:
       - mysql_data:/var/lib/mysql
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql:ro
