@@ -9,6 +9,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.openapi.utils import get_openapi
+from dbconfig import PORT
+import uvicorn
 
 from database import engine
 from models import create_tables
@@ -148,11 +150,10 @@ def create_app():
 
 if __name__ == "__main__":
     # Development server - single process
-    import uvicorn
-    logger.info("Starting development server...")
-    logger.info("Server starting on http://0.0.0.0:8000")
-    logger.info("API documentation available at http://localhost:8000/docs")
-    logger.info("Health check available at http://localhost:8000/health")
+    logger.info(f"Starting development server on port {PORT}...")
+    logger.info(f"Server starting on http://0.0.0.0:{PORT}")
+    logger.info(f"API documentation available at http://localhost:{PORT}/docs")
+    logger.info(f"Health check available at http://localhost:{PORT}/health")
     
     uvicorn.run(
         "app:app", 
