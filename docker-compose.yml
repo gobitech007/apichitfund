@@ -11,6 +11,7 @@ services:
     environment:
       - ENVIRONMENT=development
       - DATABASE_URL=mysql+pymysql://root:admin@db:3306/mychitfund
+      - PORT=8001
     depends_on:
       db:
         condition: service_healthy

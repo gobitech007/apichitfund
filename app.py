@@ -3,6 +3,7 @@ Production-ready FastAPI application with clustering support
 """
 import os
 import logging
+import time
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, APIRouter, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -27,18 +28,31 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+def init_database_with_retry(max_retries=5, retry_delay=5):
+    """Initialize database with retry logic"""
+    for attempt in range(1, max_retries + 1):
+        try:
+            logger.info(f"Database initialization attempt {attempt}/{max_retries}...")
+            create_tables(engine)
+            run_migrations()
+            logger.info("Database initialization completed successfully")
+            return True
+        except Exception as e:
+            logger.error(f"Database initialization attempt {attempt} failed: {e}")
+            if attempt < max_retries:
+                logger.info(f"Retrying in {retry_delay} seconds...")
+                time.sleep(retry_delay)
+            else:
+                logger.error("Max retries reached. Database initialization failed.")
+                raise
+    return False
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifespan manager"""
     # Startup
     logger.info("Starting up MyChitFund API...")
-    try:
-        create_tables(engine)
-        run_migrations()
-        logger.info("Database initialization completed")
-    except Exception as e:
-        logger.error(f"Database initialization failed: {e}")
-        raise
+    init_database_with_retry()
     
     yield
     

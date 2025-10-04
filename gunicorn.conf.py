@@ -2,8 +2,9 @@
 import multiprocessing
 import os
 
-# Server socket
-bind = "0.0.0.0:8000"
+# Server socket - Use PORT from environment or default to 8001 for Docker
+port = os.getenv("PORT", "8001")
+bind = f"0.0.0.0:{port}"
 backlog = 2048
 
 # Worker processes

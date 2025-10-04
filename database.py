@@ -1,8 +1,16 @@
 # database.py
+import logging
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from dbconfig import DATABASE_URL
+
+# Configure logging
+logger = logging.getLogger(__name__)
+
+# Log the database URL (mask password for security)
+masked_url = DATABASE_URL.replace(':admin@', ':****@') if ':admin@' in DATABASE_URL else DATABASE_URL
+logger.info(f"Connecting to database: {masked_url}")
 
 # Create engine with connection pooling and timeout handling
 engine = create_engine(
