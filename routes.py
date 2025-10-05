@@ -90,8 +90,12 @@ async def login_for_access_token(request: Request, db: Session = Depends(get_db)
 
 @auth_router.post("/login", response_model=schemas.Token)
 async def login(login_data: schemas.UserLogin, request: Request, db: Session = Depends(get_db)):
+    # Log the received login data for debugging
+    print(f"Login attempt received - email: {login_data.email}, phone: {login_data.phone}, aadhar: {login_data.aadhar}")
+    
     # Check if at least one identifier is provided
     if not login_data.email and not login_data.phone and not login_data.aadhar:
+        print("Login failed: No identifier provided")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="At least one of email, phone, or aadhar must be provided",

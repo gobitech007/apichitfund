@@ -90,6 +90,14 @@ class UserLogin(BaseModel):
     aadhar: Optional[str] = None
     # password: Optional[str] = None
     # pin: Optional[str] = None
+    
+    @field_validator('email', 'phone', 'aadhar', mode='before')
+    @classmethod
+    def empty_str_to_none(cls, v):
+        """Convert empty strings to None"""
+        if v == "" or v is None:
+            return None
+        return v
 
 # Dynamic Table Schemas
 class ColumnTypeEnum(str, Enum):
