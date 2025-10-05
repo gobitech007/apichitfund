@@ -5,7 +5,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: smchitfund-api
+    container_name: smchitfundapi
     ports:
       - "8001:8001"
     environment:
