@@ -81,7 +81,7 @@ app.add_middleware(GZipMiddleware, minimum_size=1000)
 # CORS middleware
 allowed_origins = os.getenv(
     "ALLOWED_ORIGINS", 
-    "http://localhost:3000,http://localhost:3001,http://localhost:54113,http://smchitfund.local:3001"
+    "http://localhost:3000,http://localhost:3001,http://localhost:54113,http://smchitfund.local:3001,http://smchitfund.local,http://www.smchitfund.local"
 ).split(",")
 
 app.add_middleware(
