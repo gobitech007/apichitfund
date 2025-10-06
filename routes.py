@@ -37,13 +37,14 @@ def health_check():
 # Authentication router
 auth_router = APIRouter(prefix="/auth", tags=["Authentication"])
 
-@auth_router.options("/cors-check")
+@auth_router.api_route("/cors-check", methods=["GET", "OPTIONS"])
 async def cors_check():
     """
     Simple endpoint to check CORS configuration.
     This endpoint is used by the frontend to verify CORS is working correctly.
+    Supports both OPTIONS (preflight) and GET requests.
     """
-    return {"status": "ok", "cors": "enabled"}
+    return {"status": "ok", "cors": "enabled", "message": "CORS is properly configured"}
 
 @auth_router.post("/token", response_model=schemas.Token)
 async def login_for_access_token(request: Request, db: Session = Depends(get_db), form_data: OAuth2PasswordRequestForm = Depends()):

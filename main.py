@@ -26,11 +26,22 @@ app = FastAPI(
 # Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:3001", "http://127.0.0.1:3000", "http://smchitfund.local:3001", "http://smchitfund.local:3000", "http://smchitfund.local", "http://www.smchitfund.local"],  # React app origins
+    allow_origins=[
+        "http://localhost:3000",
+        "http://localhost:3001",
+        "http://127.0.0.1:3000",
+        "http://127.0.0.1:3001",
+        "http://smchitfund.local:3001",
+        "http://smchitfund.local:3000",
+        "http://smchitfund.local",
+        "http://www.smchitfund.local",
+        "http://api.smchitfund.local"
+    ],  # React app origins
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
     allow_headers=["*"],
-    expose_headers=["Content-Type"]
+    expose_headers=["*"],
+    max_age=3600  # Cache preflight requests for 1 hour
 )
 
 # Add audit middleware
