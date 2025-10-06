@@ -69,7 +69,7 @@ app = FastAPI(
 )
 
 # Security middleware - Add trusted host middleware
-trusted_hosts = os.getenv("TRUSTED_HOSTS", "localhost,127.0.0.1,0.0.0.0").split(",")
+trusted_hosts = os.getenv("TRUSTED_HOSTS", "localhost,127.0.0.1,0.0.0.0,api.smchitfund.local").split(",")
 app.add_middleware(
     TrustedHostMiddleware, 
     allowed_hosts=trusted_hosts
