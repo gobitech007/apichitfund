@@ -11,8 +11,6 @@ services:
     environment:
       - ENVIRONMENT=development
       - DATABASE_URL=mysql+pymysql://root:admin@db:3306/mychitfund
-      - PORT=8000
-      - REDIS_URL=redis://redis:6379/0
     depends_on:
       db:
         condition: service_healthy
@@ -55,7 +53,7 @@ services:
       --net_read_timeout=60
       --net_write_timeout=60
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-padmin"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "--password=admin"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -64,7 +62,7 @@ services:
   # Redis for Caching/Sessions
   redis:
     image: redis:7-alpine
-    container_name: python-redis
+    container_name: smchitfund-redis
     ports:
       - "6379:6379"
     volumes:

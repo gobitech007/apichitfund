@@ -23,7 +23,7 @@ else:
     # Local development environment
     DATABASE_URL = os.getenv(
         "DATABASE_URL", 
-        "mysql+pymysql://root:admin@localhost:3306/mychitfund"
+        "mysql+pymysql://root:admin@db:3306/mychitfund"
     )
     PORT = int(os.getenv("PORT", "8000"))
     logger.info(f"Using local development configuration (PORT: {PORT})")
