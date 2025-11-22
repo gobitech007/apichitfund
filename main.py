@@ -1,3 +1,5 @@
+import os
+from dotenv import load_dotenv
 from fastapi import FastAPI, APIRouter, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
@@ -7,60 +9,62 @@ from models import create_tables
 from routes import router, auth_router, users_router, roles_router, login_history_router, chits_router
 from payments.payments_routes import payments_router
 from interest.interest_routes import router as interest_router
-# from dynamic_tables_routes import dynamic_tables_router
 from middleware import audit_middleware
 from migrations import run_migrations
+
+load_dotenv()
 
 # Create tables and run migrations
 create_tables(engine)
 run_migrations()
 
-# FastAPI app
+API_TITLE = os.getenv("API_TITLE", "MyChitFund API")
+API_VERSION = os.getenv("API_VERSION", "1.0.0")
+API_DESCRIPTION = os.getenv("API_DESCRIPTION", "API for managing users in MyChitFund application")
+DEBUG = os.getenv("DEBUG", "true").lower() == "true"
+
 app = FastAPI(
-    title="MyChitFund API",
-    description="API for managing users in MyChitFund application",
-    version="1.0.0",
-    debug=True
+    title=API_TITLE,
+    description=API_DESCRIPTION,
+    version=API_VERSION,
+    debug=DEBUG
 )
 
-# Add CORS middleware
+CORS_ORIGINS = os.getenv("CORS_ORIGINS", "http://localhost:3000,http://localhost:3001").split(",")
+CORS_ORIGINS = [origin.strip() for origin in CORS_ORIGINS]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        "http://localhost:3001",
-        "http://127.0.0.1:3000",
-        "http://127.0.0.1:3001",
-        "http://smchitfund.local:3001",
-        "http://smchitfund.local:3000",
-        "http://smchitfund.local",
-        "http://www.smchitfund.local",
-        "http://api.smchitfund.local"
-    ],  # React app origins
+    allow_origins=CORS_ORIGINS,
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
     allow_headers=["*"],
     expose_headers=["*"],
-    max_age=3600  # Cache preflight requests for 1 hour
+    max_age=3600
 )
 
 # Add audit middleware
+
+
 @app.middleware("http")
 async def audit_middleware_wrapper(request: Request, call_next):
     return await audit_middleware(request, call_next)
 
 # Custom OpenAPI schema
+
+
 def custom_openapi():
     if app.openapi_schema:
         return app.openapi_schema
     openapi_schema = get_openapi(
-        title="MyChitFund API",
-        version="1.0.0",
-        description="API for managing users in MyChitFund application",
+        title=API_TITLE,
+        version=API_VERSION,
+        description=API_DESCRIPTION,
         routes=app.routes,
     )
     app.openapi_schema = openapi_schema
     return app.openapi_schema
+
 
 app.openapi = custom_openapi
 
@@ -107,8 +111,10 @@ if __name__ == "__main__":
     print("  DELETE /api/roles/{role_id} - Delete role")
     print("Login History endpoints:")
     print("  GET    /api/login-history/ - List all login history entries")
-    print("  GET    /api/login-history/user/{user_id} - List login history for a specific user")
-    print("  GET    /api/login-history/{user_login_id} - Get login history entry by ID")
+    print(
+        "  GET    /api/login-history/user/{user_id} - List login history for a specific user")
+    print(
+        "  GET    /api/login-history/{user_login_id} - Get login history entry by ID")
     print(" GET /api/chits/ - List all chits")
     # print("Dynamic Tables endpoints:")
     # print("  POST   /api/tables/     - Create a new table definition")
@@ -122,8 +128,11 @@ if __name__ == "__main__":
     # print("  GET    /api/tables/{table_id}/data - List all rows in a table")
     print("Payments endpoints:")
     print("  GET    /api/payments/chits/ - List all chits")
-    print("  GET    /api/payments/chits/user/{user_id} - List all chits for a specific user")
+    print(
+        "  GET    /api/payments/chits/user/{user_id} - List all chits for a specific user")
     print("  POST   /api/payments/chit_users/ - Create a new chit user association")
-    print("  PATCH  /api/payments/chits/{user_id} - Update amount for a specific chit")
+    print(
+        "  PATCH  /api/payments/chits/{user_id} - Update amount for a specific chit")
     print("  GET    /api/payments/transaction-history/ - Get transaction history with optional user_id and chit_no filters")
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True, log_level="info")
+    uvicorn.run("main:app", host="0.0.0.0", port=8000,
+                reload=True, log_level="info")

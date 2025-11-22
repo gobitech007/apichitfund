@@ -1,6 +1,9 @@
 # dbconfig.py
 import os
 import logging
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)

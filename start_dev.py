@@ -5,9 +5,11 @@ Single process with auto-reload for development
 """
 import uvicorn
 import os
+from dotenv import load_dotenv
 
 if __name__ == "__main__":
-    # Set development environment
+    load_dotenv()
+    
     os.environ.setdefault("DEBUG", "true")
     os.environ.setdefault("ENVIRONMENT", "development")
     

@@ -7,9 +7,11 @@ import os
 import sys
 import subprocess
 import multiprocessing
+from dotenv import load_dotenv
 
 def main():
-    # Set production environment
+    load_dotenv()
+    
     os.environ.setdefault("DEBUG", "false")
     os.environ.setdefault("ENVIRONMENT", "production")
     
