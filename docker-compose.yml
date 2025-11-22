@@ -14,8 +14,8 @@ services:
     depends_on:
       db:
         condition: service_started
-      redis:
-        condition: service_started
+      # redis:
+      #   condition: service_started
     volumes:
       - ./logs:/app/logs
     networks:
@@ -60,33 +60,33 @@ services:
       start_period: 30s
 
   # Redis for Caching/Sessions
-  redis:
-    image: redis:7-alpine
-    container_name: smchitfund-redis
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis_data:/data
-    networks:
-      - smchitfund-network
-    restart: unless-stopped
-    command: redis-server --appendonly yes
+  # redis:
+  #   image: redis:7-alpine
+  #   container_name: smchitfund-redis
+  #   ports:
+  #     - "6379:6379"
+  #   volumes:
+  #     - redis_data:/data
+  #   networks:
+  #     - smchitfund-network
+  #   restart: unless-stopped
+  #   command: redis-server --appendonly yes
 
   # Nginx Reverse Proxy
-  nginx:
-    image: nginx:alpine
-    container_name: smchitfund-nginx
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./ssl:/etc/nginx/ssl:ro
-    depends_on:
-      - api
-    networks:
-      - smchitfund-network
-    restart: unless-stopped
+  # nginx:
+  #   image: nginx:alpine
+  #   container_name: smchitfund-nginx
+  #   ports:
+  #     - "80:80"
+  #     - "443:443"
+  #   volumes:
+  #     - ./nginx.conf:/etc/nginx/nginx.conf:ro
+  #     - ./ssl:/etc/nginx/ssl:ro
+  #   depends_on:
+  #     - api
+  #   networks:
+  #     - smchitfund-network
+  #   restart: unless-stopped
 
 volumes:
   mysql_data:
