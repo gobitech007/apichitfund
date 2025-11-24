@@ -1,39 +1,98 @@
 version: '3.8'
-
 services:
-  backend:
-    container_name: smchit-api-users
-    build: ./backend
+  # FastAPI Application
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: smchitfund-api
     ports:
       - "8000:8000"
     environment:
-      DB_HOST: smchitfund-mysql
-      DB_PORT: 3306
+      - ENVIRONMENT=development
+      - DB_HOST=mysql
     depends_on:
-      - mysql
+      db:
+        condition: service_started
+      # redis:
+      #   condition: service_started
+    volumes:
+      - ./logs:/app/logs
     networks:
-      - smchitnet
+      - smchitfund-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
-  frontend:
-    container_name: smchitfund-react
-    build: ./frontend
-    ports:
-      - "3000:3000"
-    networks:
-      - smchitnet
-
-  mysql:
-    container_name: smchitfund-mysql
+  # MySQL Database
+  db:
     image: mysql:8.0
+    container_name: smchitfund-mysql
+    environment:
+      - MYSQL_DATABASE=mychitfund
+      - MYSQL_USER=root
+      - MYSQL_PASSWORD=admin
     ports:
       - "3308:3306"
-    environment:
-      MYSQL_ROOT_PASSWORD: admin
-      MYSQL_DATABASE: mychitfund
-      MYSQL_USER: root
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     networks:
-      - smchitnet
+      - smchitfund-network
+    restart: unless-stopped
+    command:
+      --default-authentication-plugin=mysql_native_password
+      --wait_timeout=28800
+      --interactive_timeout=28800
+      --max_allowed_packet=256M
+      --net_read_timeout=60
+      --net_write_timeout=60
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "0.0.0.0", "-u", "root", "--password=admin"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # Redis for Caching/Sessions
+  # redis:
+  #   image: redis:7-alpine
+  #   container_name: smchitfund-redis
+  #   ports:
+  #     - "6379:6379"
+  #   volumes:
+  #     - redis_data:/data
+  #   networks:
+  #     - smchitfund-network
+  #   restart: unless-stopped
+  #   command: redis-server --appendonly yes
+
+  # Nginx Reverse Proxy
+  # nginx:
+  #   image: nginx:alpine
+  #   container_name: smchitfund-nginx
+  #   ports:
+  #     - "80:80"
+  #     - "443:443"
+  #   volumes:
+  #     - ./nginx.conf:/etc/nginx/nginx.conf:ro
+  #     - ./ssl:/etc/nginx/ssl:ro
+  #   depends_on:
+  #     - api
+  #   networks:
+  #     - smchitfund-network
+  #   restart: unless-stopped
+
+volumes:
+  mysql_data:
+    driver: local
+  redis_data:
+    driver: local
 
 networks:
-  smchitnet:
+  smchitfund-network:
     driver: bridge
