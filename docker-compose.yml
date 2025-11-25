@@ -3,14 +3,11 @@ services:
   api:
     build: .
     container_name: smchitfund-api
-    hostname: api.smchitfund.local
     environment:
       - ENVIRONMENT=development
-      - DB_HOST=db
-      - DB_USER=root
-      - DB_PASS=admin
-      - DB_PORT=3306
-      - DB_NAME=mychitfund
+      - DATABASE_URL=mysql+pymysql://root:admin@db:3306/mychitfund
+    extra_hosts:
+      - "api.smchitfund.local:127.0.0.1"
     ports:
       - "8000:8000"
     depends_on:
