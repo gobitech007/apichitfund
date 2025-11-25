@@ -30,7 +30,7 @@ ARG APP_PORT=8000
 ENV HOST=${APP_HOST}
 ENV PORT=${APP_PORT}
 
-RUN echo "127.0.0.1 api.smchitfund.local" >> /etc/hosts
+#RUN echo "127.0.0.1 api.smchitfund.local" >> /etc/hosts
 # Health check
 HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
     CMD curl -f http://api.smchitfund.local/health || exit 1
