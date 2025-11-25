@@ -14,6 +14,20 @@ pipeline {
     }
     
     stages {
+        stage('Cleanup Old Resources') {
+            steps {
+                sh '''
+                    echo "Cleaning up old containers and images..."
+                    docker-compose -f ${COMPOSE_FILE} down --rmi all --volumes 2>/dev/null || true
+                    
+                    echo "Removing dangling images..."
+                    docker image prune -f --filter "until=72h" || true
+                    
+                    docker ps -a
+                '''
+            }
+        }
+        
         stage('Checkout') {
             steps {
                 checkout scm
