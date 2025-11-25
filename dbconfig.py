@@ -9,7 +9,13 @@ load_dotenv()
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-
+db_params = {
+            'host':"db",
+            'user':"root",
+            'password':"admin",
+            'database':"mychitfund",
+            'port':3306
+    }
 # Get the current environment
 ENVIRONMENT = os.getenv("ENVIRONMENT", "localhost")
 logger.info(f"Environment detected: {ENVIRONMENT}")
@@ -17,24 +23,12 @@ logger.info(f"Environment detected: {ENVIRONMENT}")
 # Database configuration based on environment
 if ENVIRONMENT == "development":
     # Docker development environment
-    DATABASE_URL = pymysql.connect(
-                        host="db",
-                        user="root",
-                        password="admin",
-                        database="mychitfund",
-                        port=3306
-                    )
+    DATABASE_URL = pymysql.connect(**db_params)
     PORT = int(os.getenv("PORT", "8001"))
     logger.info(f"Using Docker development configuration (PORT: {PORT})")
 else:
     # Local development environment
-    DATABASE_URL = pymysql.connect(
-                        host="db",
-                        user="root",
-                        password="admin",
-                        database="mychitfund",
-                        port=3306
-                    )
+    DATABASE_URL = pymysql.connect(**db_params)
     PORT = int(os.getenv("PORT", "8000"))
     logger.info(f"Using local development configuration (PORT: {PORT})")
 

@@ -3,18 +3,16 @@ import logging
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
-from dbconfig import DATABASE_URL
 
 # Configure logging
 logger = logging.getLogger(__name__)
 
 # Log the database URL (mask password for security)
-masked_url = DATABASE_URL.replace(':admin@', ':****@') if ':admin@' in DATABASE_URL else DATABASE_URL
-logger.info(f"Connecting to database: {masked_url}")
+# logger.info(f"Connecting to database: {masked_url}")
 
 # Create engine with connection pooling and timeout handling
 engine = create_engine(
-    DATABASE_URL,
+    "mysql+pymysql://root:admin@db:3306/mychitfund",
     pool_pre_ping=True,  # Verify connections before using them
     pool_recycle=3600,   # Recycle connections after 1 hour (3600 seconds)
     pool_size=10,        # Maximum number of connections to keep open
