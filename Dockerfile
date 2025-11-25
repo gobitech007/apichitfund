@@ -24,13 +24,16 @@ RUN useradd --create-home --shell /bin/bash app \
 USER app
 
 # Bind CRA dev server to all interfaces and use port 3000
-ENV HOST=0.0.0.0
-ENV PORT=8000
-EXPOSE 8000
+ARG APP_HOST=api.smchitfund.local
+ARG APP_PORT=8000
 
+ENV HOST=${APP_HOST}
+ENV PORT=${APP_PORT}
+
+RUN echo "127.0.0.1 api.smchitfund.local" >> /etc/hosts
 # Health check
 HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
-    CMD curl -f http://0.0.0.0:8000/health || exit 1
+    CMD curl -f http://api.smchitfund.local/health || exit 1
 
 # Production command with Gunicorn
 CMD ["gunicorn", "app:app", "-c", "gunicorn.conf.py"]
