@@ -1,6 +1,5 @@
 version: '3.8'
 services:
-  # FastAPI Application
   api:
     build: .
     container_name: smchitfund-api
@@ -8,26 +7,19 @@ services:
     environment:
       - ENVIRONMENT=development
       - DB_HOST=db
+      - DB_USER=root
+      - DB_PASS=admin
+      - DB_PORT=3306
+      - DB_NAME=mychitfund
     ports:
       - "8000:8000"
-    extra_hosts:
-      - "api.smchitfund.local:127.0.0.1"
     depends_on:
       db:
         condition: service_healthy
-    volumes:
-      - ./logs:/app/logs
     networks:
       - smchitfund-network
     restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://0.0.0.0:8000/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
 
-  # MySQL Database
   db:
     image: mysql:8.0
     container_name: smchitfund-mysql
@@ -38,17 +30,10 @@ services:
       - "3308:3306"
     volumes:
       - mysql_data:/var/lib/mysql
-      - ./init.sql:/docker-entrypoint-initdb.d:ro
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     networks:
       - smchitfund-network
     restart: unless-stopped
-    command:
-      --default-authentication-plugin=mysql_native_password
-      --wait_timeout=28800
-      --interactive_timeout=28800
-      --max_allowed_packet=256M
-      --net_read_timeout=60
-      --net_write_timeout=60
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "--password=admin"]
       interval: 10s
@@ -56,40 +41,9 @@ services:
       retries: 5
       start_period: 30s
 
-  # Redis for Caching/Sessions
-  # redis:
-  #   image: redis:7-alpine
-  #   container_name: smchitfund-redis
-  #   ports:
-  #     - "6379:6379"
-  #   volumes:
-  #     - redis_data:/data
-  #   networks:
-  #     - smchitfund-network
-  #   restart: unless-stopped
-  #   command: redis-server --appendonly yes
-
-  # Nginx Reverse Proxy
-  # nginx:
-  #   image: nginx:alpine
-  #   container_name: smchitfund-nginx
-  #   ports:
-  #     - "80:80"
-  #     - "443:443"
-  #   volumes:
-  #     - ./nginx.conf:/etc/nginx/nginx.conf:ro
-  #     - ./ssl:/etc/nginx/ssl:ro
-  #   depends_on:
-  #     - api
-  #   networks:
-  #     - smchitfund-network
-  #   restart: unless-stopped
-
 volumes:
   mysql_data:
-    driver: local
   redis_data:
-    driver: local
 
 networks:
   smchitfund-network:
