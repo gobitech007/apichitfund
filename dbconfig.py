@@ -2,20 +2,14 @@
 import os
 import logging
 from dotenv import load_dotenv
-import pymysql
+import mysql.connector
 
 load_dotenv()
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-db_params = {
-            'host':"db",
-            'user':"root",
-            'password':"admin",
-            'database':"mychitfund",
-            'port':3306
-    }
+
 # Get the current environment
 ENVIRONMENT = os.getenv("ENVIRONMENT", "localhost")
 logger.info(f"Environment detected: {ENVIRONMENT}")
@@ -23,12 +17,18 @@ logger.info(f"Environment detected: {ENVIRONMENT}")
 # Database configuration based on environment
 if ENVIRONMENT == "development":
     # Docker development environment
-    DATABASE_URL = pymysql.connect(**db_params)
+    DATABASE_URL = os.getenv(
+        "DATABASE_URL", 
+        "mysql+pymysql://root:admin@db:3306/mychitfund"
+    )
     PORT = int(os.getenv("PORT", "8001"))
     logger.info(f"Using Docker development configuration (PORT: {PORT})")
 else:
     # Local development environment
-    DATABASE_URL = pymysql.connect(**db_params)
+    DATABASE_URL = os.getenv(
+        "DATABASE_URL", 
+        "mysql+pymysql://root:admin@db:3306/mychitfund"
+    )
     PORT = int(os.getenv("PORT", "8000"))
     logger.info(f"Using local development configuration (PORT: {PORT})")
 
@@ -37,4 +37,4 @@ REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
 if ENVIRONMENT == "development":
     REDIS_URL = os.getenv("REDIS_URL", "redis://redis:6379/0")
 
-# logger.info(f"Database URL configured (host extracted): {DATABASE_URL.split('@')[1].split('/')[0] if '@' in DATABASE_URL else 'unknown'}")
+logger.info(f"Database URL configured (host extracted): {DATABASE_URL.split('@')[1].split('/')[0] if '@' in DATABASE_URL else 'unknown'}")
