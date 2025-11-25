@@ -36,4 +36,4 @@ HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
     CMD curl -f http://0.0.0.0:8000/health || exit 1
 
 # Production command with Gunicorn
-CMD ["sh", "-c", "python migrate.py && gunicorn app:app -w 4 -b 0.0.0.0:8000"]
+CMD ["gunicorn", "app:app", "-c", "gunicorn.conf.py"]
