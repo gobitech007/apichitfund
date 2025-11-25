@@ -14,7 +14,7 @@ services:
       - "api.smchitfund.local:127.0.0.1"
     depends_on:
       db:
-        condition: service_started
+        condition: service_healthy
     volumes:
       - ./logs:/app/logs
     networks:
@@ -34,13 +34,11 @@ services:
     environment:
       - MYSQL_ROOT_PASSWORD=admin
       - MYSQL_DATABASE=mychitfund
-      - MYSQL_USER=root
-      - MYSQL_PASSWORD=admin
     ports:
       - "3308:3306"
     volumes:
       - mysql_data:/var/lib/mysql
-      - ./init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      - ./init.sql:/docker-entrypoint-initdb.d:ro
     networks:
       - smchitfund-network
     restart: unless-stopped
@@ -52,7 +50,7 @@ services:
       --net_read_timeout=60
       --net_write_timeout=60
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "0.0.0.0", "-u", "root", "--password=admin"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "--password=admin"]
       interval: 10s
       timeout: 5s
       retries: 5
