@@ -23,7 +23,9 @@ RUN useradd --create-home --shell /bin/bash app \
     && chown -R app:app /app
 USER app
 
-# Expose port
+# Bind CRA dev server to all interfaces and use port 3000
+ENV HOST=0.0.0.0
+ENV PORT=8000
 EXPOSE 8000
 
 # Health check
