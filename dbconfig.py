@@ -2,7 +2,7 @@
 import os
 import logging
 from dotenv import load_dotenv
-import mysql.connector
+import pymysql
 
 load_dotenv()
 
@@ -17,7 +17,7 @@ logger.info(f"Environment detected: {ENVIRONMENT}")
 # Database configuration based on environment
 if ENVIRONMENT == "development":
     # Docker development environment
-    DATABASE_URL = mysql.connector.connect(
+    DATABASE_URL = pymysql.connect(
                         host="db",
                         user="root",
                         password="admin",
@@ -28,7 +28,7 @@ if ENVIRONMENT == "development":
     logger.info(f"Using Docker development configuration (PORT: {PORT})")
 else:
     # Local development environment
-    DATABASE_URL = mysql.connector.connect(
+    DATABASE_URL = pymysql.connect(
                         host="db",
                         user="root",
                         password="admin",

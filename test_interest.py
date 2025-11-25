@@ -11,7 +11,8 @@ def test_interest_calculation():
     """
     # Database connection parameters
     db_params = {
-        'host': 'localhost',
+        'host': 'db',
+        'port': 3306,
         'user': 'root',
         'password': 'admin',
         'database': 'mychitfund',
