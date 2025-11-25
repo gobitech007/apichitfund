@@ -43,4 +43,4 @@ REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
 if ENVIRONMENT == "development":
     REDIS_URL = os.getenv("REDIS_URL", "redis://redis:6379/0")
 
-logger.info(f"Database URL configured (host extracted): {DATABASE_URL.split('@')[1].split('/')[0] if '@' in DATABASE_URL else 'unknown'}")
+# logger.info(f"Database URL configured (host extracted): {DATABASE_URL.split('@')[1].split('/')[0] if '@' in DATABASE_URL else 'unknown'}")
